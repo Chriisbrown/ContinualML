@@ -4,17 +4,27 @@ import torch.nn as nn
 # number of features (len of X cols)
 input_dim = 10
 # number of hidden layers
-hidden_layers = 25
+hidden_layers = [25,30]
 # number of classes (unique of y)
-output_dim = 2
+output_dim = 1
 
 class simpleNN(nn.Module):
   def __init__(self):
     super(simpleNN, self).__init__()
-    self.linear1 = nn.Linear(input_dim, hidden_layers)
-    self.linear2 = nn.Linear(hidden_layers, output_dim)
+    self.linear1 = nn.Linear(input_dim, hidden_layers[0])
+    nn.init.kaiming_uniform_(self.linear1.weight, nonlinearity='relu')
+    self.act1 = nn.ReLU()
+    self.linear2 = nn.Linear(hidden_layers[0], hidden_layers[1])
+    nn.init.kaiming_uniform_(self.linear2.weight, nonlinearity='relu')
+    self.act2 = nn.ReLU()
+    self.linear3 = nn.Linear(hidden_layers[1], output_dim)
+    nn.init.xavier_uniform_(self.linear3.weight)
+    self.act3 = nn.Sigmoid()
   def forward(self, x):
     x = self.linear1(x)
-    x = torch.relu(x)
+    x = self.act1(x)
     x = self.linear2(x)
+    x = self.act2(x)
+    x = self.linear3(x)
+    x = self.act3(x)
     return x

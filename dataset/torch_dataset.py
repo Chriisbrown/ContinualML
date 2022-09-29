@@ -21,9 +21,11 @@ class TrackDataset(Dataset):
                                   "pv_reco"]
         self.target_feature = ['from_PV']
 
+        self.X_data = self.dataframe[self.training_features].to_numpy(dtype="float")
+        self.y_data = self.dataframe[self.target_feature].to_numpy(dtype="float")
+
     def __len__(self):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
-        #print(self.dataframe[self.training_features].loc[idx].to_numpy(),self.dataframe[self.target_feature].loc[idx].to_numpy())
-        return self.dataframe[self.training_features].loc[idx].to_numpy(dtype="float"), self.dataframe[self.target_feature].loc[idx].to_numpy(dtype="float")
+        return self.X_data[idx] , self.y_data[idx]
