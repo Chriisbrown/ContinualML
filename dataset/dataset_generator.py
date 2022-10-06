@@ -8,10 +8,14 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
+# Random seed for dataset splitting
 np.random.seed(42)
 
-f = "/home/cebrown/Documents/Datasets/VertexDatasets/OldKF_test.root"
+f = sys.argv[1]
 
+# Which branches to create for training
+# pv_reco is the standard FastHisto vertex run in CMSSW
+# from_PV defines if a track is primary vertex, this is our target
 branches = [
     'trk_MVA1', 
     'trk_bendchi2',
@@ -26,53 +30,80 @@ branches = [
     "pv_reco",
     'pv_truth',
     'from_PV'
+    # my_extra_features
 ]
 
-
+# How big each chunk read should be, only impacts performance, all tracks are 
+# recombined into a single pandas dataframe
 chunkread = 5000
 batch_num = 0
+# How big is our training and validation fractions, rest is testing
+# train_fraction + val_fraction + test_fraction = 1
+train_fraction = 0.7
+val_fraction = 0.1
 
 events = uproot.open(f+':L1TrackNtuple/eventTree')
 
+#Define blank dataframe for tracks
 TrackDF = pd.DataFrame()
 
+#Iterate through events
 for batch in events.iterate(step_size=chunkread, library='pd'):
+    # Create some additional entries in batch dataframe, need to be same dimensions
+    # as tracks not events. Jagged arrays prevent this being standardised
     batch[0]['pv_reco'] = batch[0]['trk_MVA1']
     batch[0]['pv_truth'] = batch[0]['trk_MVA1']
+    # Iterate through events in batch
     for ievt in range(len(batch[0].reset_index(level=1).index.value_counts())):
+        #Create blank array for PV position same length as track data for this event
         pvs = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
+        # Fill array with pv_l1Reco for event track in event
         pvs.fill(batch[2]['pv_L1reco'][batch_num*chunkread + ievt][0])
+        # Put array into batch dataframe
         batch[0]["pv_reco"][batch_num*chunkread + ievt] = pvs
 
+        # Repeat for truth level vertex position
         pv_t = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
         pv_t.fill(batch[2]['pv_MC'][batch_num*chunkread + ievt][0])
         batch[0]["pv_truth"][batch_num*chunkread + ievt] = pv_t
-        
 
+        # trk_fake defines tracks as 0 for fake, 1 for PV and 2 for PU
+        # Need single varible for training so cast trk_fake==1 as int
         batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
+
+        ##############################################################
+
+        # Define other training features here and add name to branches list
+
+        # batch[0]["my_feautre"] = batch[0]["pv_reco"] ** 2
+
+        ##############################################################
 
     batch_num += 1
 
+    #Add batch dataframe to larger dataframe, only defined branches are added to save memory
     TrackDF = pd.concat([TrackDF,batch[0][branches]])
+    print(batch_num," out of: ", len(events))
 
-    if batch_num > 1:
-        break
-
+# Reset index due to double indices in concatanated array
 TrackDF.reset_index(inplace=True)
+# Remove any tracks with NA entries
 TrackDF.dropna(inplace=True)
 
-train_fraction = 0.7
-val_fraction = 0.1
-print(TrackDF.head())
 
+# Get random ordered indices of track DF, this will tell us 
+# which tracks to pick out of total dataset when getting train, test, val
 perm = np.random.permutation(TrackDF.index)
 
+# Find number of tracks in train fraction [0:train_end] is train fraction
 train_end = int(train_fraction * len(TrackDF.index))
+# Find tracks for val fraction [train_end:validate_end] is val fraction
 validate_end = int(val_fraction * len(TrackDF.index)) + train_end
+# Sample TrackDF taking the training indices, randomised by permutation
+# same for validate and test
 train = TrackDF.loc[perm[:train_end]]
 validate = TrackDF.loc[perm[train_end:validate_end]]
 test = TrackDF.loc[perm[validate_end:]]
-
 
 print("================= Train =================")
 print(train.describe())
@@ -81,10 +112,12 @@ print(validate.describe())
 print("================= Test =================")
 print(test.describe())
 
+# Reset indices, currently have original indices from TrackDF
 train.reset_index(inplace=True)
 validate.reset_index(inplace=True)
 test.reset_index(inplace=True)
 
+# Save, can modify these locations as needed
 train.to_pickle("Train/train.pkl") 
 validate.to_pickle("Val/val.pkl") 
 test.to_pickle("Test/test.pkl") 

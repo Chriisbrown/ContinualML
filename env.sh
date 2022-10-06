@@ -1,6 +1,12 @@
 #!/bin/bash
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate avalanche-dev-env
-export PATH=/home/cebrown/anaconda3/envs/avalanche-dev-env/bin/python:$PATH
-export PYTHONPATH=/home/cebrown/Documents/ContinualAI/avalanche:$PYTHONPATH  
-export PYTHONPATH=/home/cebrown/Documents/ContinualAI:$PYTHONPATH 
+
+pip install avalanche-lib
+
+export PATH=~/anaconda3/envs/avalanche-dev-env/bin/python:$PATH
+export PYTHONPATH=$PWD:$PYTHONPATH 
+
+mkdir dataset/Test
+mkdir dataset/Train
+mkdir dataset/Val

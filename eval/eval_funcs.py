@@ -8,6 +8,13 @@ import mplhep as hep
 import sklearn.metrics as metrics
 from textwrap import wrap
 
+
+"""
+These function define evaluation plots to be run on the output of the model
+
+"""
+
+# Setup plotting to CMS style
 hep.cms.label()
 hep.cms.text("Simulation")
 plt.style.use(hep.style.CMS)
@@ -43,29 +50,47 @@ matplotlib.rcParams['ytick.minor.width'] = 4
 
 colours=["red","green","blue","orange","purple","yellow"]
 
-def plotPV_roc(actual,pred,name,Nthresholds=50,colours=colours):
+def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
+    '''
+    Plots reciever operating characteristic curve for output of a predicition model
+
+    Takes: 
+        actual: a numpy array of true values 0 or 1
+        predictions: a list of numpy arrays, each array same length as actual which are probabilities of coming from class 1, float between 0 and 1
+        names: a list of strings naming each of the prediciton arrays
+        Nthresholds: how many thresholds between 0 and 1 to calcuate the TPR, FPR etc.
+        colours: list of matplotlib colours to be used for each item in the predictions list
+
+    '''
     plt.clf()
     fig,ax = plt.subplots(1,2,figsize=(20,10))
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[0])
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[1])
 
-    items=0
+    items = 0
 
-    precisionNN = []
-    recallNN = []
-    FPRNN = []
+    # Iterate through predictions
+    for i,prediction in enumerate(predictions):
 
-    thresholds = np.linspace(0,1,Nthresholds)
+        precision = []
+        recall = []
+        FPR= []
 
-    for j,threshold in enumerate(thresholds):
-        print(str(name) + " Testing ROC threshold: "+str(j) + " out of "+str(len(thresholds)))
-        tnNN, fpNN, fnNN, tpNN = metrics.confusion_matrix(actual, pred>threshold).ravel()
-        precisionNN.append( tpNN / (tpNN + fpNN) )
-        recallNN.append(tpNN / (tpNN + fnNN) )
-        FPRNN.append(fpNN / (fpNN + tnNN) )
+        thresholds = np.linspace(0,1,Nthresholds)
 
-    ax[0].plot(recallNN,precisionNN,label=str(name),linewidth=LINEWIDTH,color=colours[items])
-    ax[1].plot(recallNN,FPRNN,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(name,metrics.roc_auc_score(actual,pred)),LEGEND_WIDTH)),color=colours[items])
+        #Iterate through thresholds
+        for j,threshold in enumerate(thresholds):
+            print(str(names[i]) + " Testing ROC threshold: "+str(j) + " out of "+str(len(thresholds)))
+            # Find number of true negatives, false positive, false negatives and true positives when decision bounary == threshold
+            tn, fp, fn, tp = metrics.confusion_matrix(actual, prediction>threshold).ravel()
+            precision.append( tp / (tp + fp) )
+            recall.append(tp / (tp + fn) )
+            FPR.append(fp / (fp + tn) )
+
+        # Plot precision recall and ROC curves
+        ax[0].plot(recall,precision,label=str(names[i]),linewidth=LINEWIDTH,color=colours[items])
+        ax[1].plot(recall,FPR,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(names[i],metrics.roc_auc_score(actual,prediction)),LEGEND_WIDTH)),color=colours[items])
+        item += 1
 
     ax[0].grid(True)
     ax[0].set_xlabel('Efficiency',ha="right",x=1)
