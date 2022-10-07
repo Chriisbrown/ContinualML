@@ -15,7 +15,7 @@ GTT_TrackNtuple_FH_oldTQ.root 300K events
 
 With a standard install of a anaconda environment
 
-`conda create env -f avalanche-environment.yml`
+`conda env create -f avalanche-environment.yml`
 
 `source env.sh`
 
