@@ -10,7 +10,7 @@ class TrackDataset(Dataset):
     Takes dataset_dir as a string input
 
     """
-    def __init__(self, dataset_dir ):
+    def __init__(self, dataset_dir, transform=None ):
         self.dataset_dir = dataset_dir
         self.dataframe = pd.read_pickle(dataset_dir)
 
@@ -28,16 +28,21 @@ class TrackDataset(Dataset):
         
         # Binary target features
         self.target_feature = ['from_PV']
+        self.transform = transform
+
+        if self.transform:
+            self.dataframe = self.transform(self.dataframe)
 
         # Cast to numpy, quicker acces when getting items
         self.X_data = self.dataframe[self.training_features].to_numpy(dtype="float")
-        self.y_data = self.dataframe[self.target_feature].to_numpy(dtype="float")
+        self.targets = self.dataframe[self.target_feature].to_numpy(dtype="float")
+        
 
     def __len__(self):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
-        return self.X_data[idx] , self.y_data[idx]
+        return self.X_data[idx] , self.targets[idx]
 
 #Define any transformations to the data here to simulate detector performance degredation on a track level
 class Randomiser(object):
@@ -50,7 +55,7 @@ class Randomiser(object):
     """
 
     def __init__(self,max,feature):
-        self.max_int = max
+        self.max = max
         self.feature = feature
 
     def __call__(self, sample):

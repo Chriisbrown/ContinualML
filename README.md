@@ -4,6 +4,12 @@
 ## Description
 This repo outlines the dataset generation, simple model definition and some evaluation functions for a track to vertex classifier. It acts as a starting point for the ML@L1 hackathon and will look to implement a continual ML model using the avalanche framework and pytorch
 
+Some dataset exist here: https://cernbox.cern.ch/index.php/s/9P2Qw1ssGcld3Pz
+
+OldKF_test.root 16K events
+
+GTT_TrackNtuple_FH_oldTQ.root 300K events 
+
 
 ## Installation
 
@@ -26,6 +32,8 @@ With a standard install of a anaconda environment
 To generate datasets use in the dataset dir:
 
 `dataset_generator.py path/to/rootfile.root`
+
+For large datasets this will take a while 
 
 To run a simple training of the simpleNN model use
 

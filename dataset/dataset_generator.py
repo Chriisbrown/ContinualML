@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
-
+pd.options.mode.chained_assignment = None
 # Random seed for dataset splitting
 np.random.seed(42)
 
@@ -43,7 +43,6 @@ train_fraction = 0.7
 val_fraction = 0.1
 
 events = uproot.open(f+':L1TrackNtuple/eventTree')
-
 #Define blank dataframe for tracks
 TrackDF = pd.DataFrame()
 

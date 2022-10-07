@@ -30,12 +30,12 @@ MARKERSIZE = 20
 colormap = "jet"
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=BIGGER_SIZE)    # fontsize of the axes title
-plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
-plt.rc('axes', linewidth=5)              # thickness of axes
+plt.rc('axes', titlesize=MEDIUM_SIZE)    # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('axes', linewidth=LINEWIDTH+2)              # thickness of axes
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=18)            # legend fontsize
+plt.rc('legend', fontsize=SMALL_SIZE-2)            # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 matplotlib.rcParams['xtick.major.size'] = 20
@@ -90,7 +90,7 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
         # Plot precision recall and ROC curves
         ax[0].plot(recall,precision,label=str(names[i]),linewidth=LINEWIDTH,color=colours[items])
         ax[1].plot(recall,FPR,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(names[i],metrics.roc_auc_score(actual,prediction)),LEGEND_WIDTH)),color=colours[items])
-        item += 1
+        items += 1
 
     ax[0].grid(True)
     ax[0].set_xlabel('Efficiency',ha="right",x=1)

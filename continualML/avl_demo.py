@@ -1,6 +1,10 @@
+
 from torch.optim import SGD
 from torch.nn import CrossEntropyLoss
-from avalanche.benchmarks.classic import SplitMNIST
+from dataset.torch_dataset import TrackDataset, Randomiser
+from torch.utils.data import DataLoader
+from avalanche.benchmarks import ni_benchmark
+from avalanche.benchmarks.utils import AvalancheDataset
 from avalanche.evaluation.metrics import forgetting_metrics, accuracy_metrics, \
     loss_metrics, timing_metrics, cpu_usage_metrics, confusion_matrix_metrics, disk_usage_metrics
 from avalanche.models import SimpleMLP
@@ -8,10 +12,20 @@ from avalanche.logging import InteractiveLogger, TextLogger, TensorboardLogger
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive
 
-scenario = SplitMNIST(n_experiences=5)
+from torchvision.datasets import MNIST
+
+
+
+Traindata = TrackDataset("../dataset/SmallTest/Train/train.pkl")
+Testdata = TrackDataset("../dataset/SmallTest/Test/test.pkl")
+
+scenario = ni_benchmark(
+        Traindata, Testdata, 1, task_labels=False, seed=1234
+    )
+
 
 # MODEL CREATION
-model = SimpleMLP(num_classes=scenario.n_classes)
+model = SimpleMLP(num_classes=1)
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.
@@ -33,7 +47,7 @@ eval_plugin = EvaluationPlugin(
     timing_metrics(epoch=True, epoch_running=True),
     forgetting_metrics(experience=True, stream=True),
     cpu_usage_metrics(experience=True),
-    confusion_matrix_metrics(num_classes=scenario.n_classes, save_image=False,
+    confusion_matrix_metrics(num_classes=2, save_image=False,
                              stream=True),
     disk_usage_metrics(minibatch=True, epoch=True, experience=True, stream=True),
     loggers=[interactive_logger, text_logger, tb_logger]
