@@ -62,7 +62,6 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
         colours: list of matplotlib colours to be used for each item in the predictions list
 
     '''
-    plt.clf()
     fig,ax = plt.subplots(1,2,figsize=(20,10))
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[0])
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[1])
@@ -106,4 +105,22 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
     ax[1].set_ylim([1e-2,1])
     ax[1].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
     plt.tight_layout()
+    return fig
+
+
+def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100):
+    pv_track_sel = actual == 1
+    pu_track_sel = actual == 0
+    fig,ax = plt.subplots(1,1,figsize=(12,10))
+    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax)
+    
+    ax.hist(variable[pv_track_sel],range=range, bins=bins, label="PV tracks", density=True,histtype="stepfilled",color='g',alpha=0.7,linewidth=LINEWIDTH)
+    ax.hist(variable[pu_track_sel],range=range, bins=bins, label="PU tracks", density=True,histtype="stepfilled",color='r',alpha=0.7,linewidth=LINEWIDTH)
+    ax.set_xlabel(variable_name, horizontalalignment='right', x=1.0)
+    ax.set_ylabel("# Tracks", horizontalalignment='right', y=1.0)
+    ax.set_yscale("log")
+    ax.legend()
+    ax.tick_params(axis='x', which='minor', bottom=False,top=False)
+    plt.tight_layout()
+
     return fig

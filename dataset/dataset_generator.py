@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
+from eval import *
 pd.options.mode.chained_assignment = None
 # Random seed for dataset splitting
 np.random.seed(42)
@@ -16,22 +17,62 @@ f = sys.argv[1]
 # Which branches to create for training
 # pv_reco is the standard FastHisto vertex run in CMSSW
 # from_PV defines if a track is primary vertex, this is our target
-branches = [
-    'trk_MVA1', 
-    'trk_bendchi2',
-    'trk_chi2rphi', 
-    'trk_chi2rz', 
-    'trk_eta', 
-    'trk_fake', 
-    'trk_nstub', 
-    'trk_phi',
-    'trk_pt',
-    'trk_z0',
-    "pv_reco",
-    'pv_truth',
-    'from_PV'
-    # my_extra_features
-]
+
+branches_dict = {'ntuple_names':['trk_MVA1', 
+                                'trk_bendchi2',
+                                'trk_chi2rphi', 
+                                'trk_chi2rz', 
+                                'trk_eta', 
+                                'trk_fake', 
+                                'trk_nstub', 
+                                'trk_phi',
+                                'trk_pt',
+                                'trk_z0',
+                                "pv_reco",
+                                'pv_truth',
+                                'from_PV'
+                                # my_extra_features
+                            ],
+                  "names":['trk MVA1', 
+                          'trk $\\chi^2_{bend}$',
+                          'trk $\\chi^2_{r\\phi}$', 
+                          'trk $\\chi^2_{rz}$', 
+                          'trk $\\eta$', 
+                          'trk fake', 
+                          'trk #stub', 
+                          'trk $\\phi$ [rad]',
+                          'trk $p_T$ [GeV]',
+                          'trk $z_0$ [cm]',
+                          "$PV_{reco}$ [cm]",
+                          '$PV_{truth}$ [cm]',
+                          'from PV'],
+                "ranges":[(0,1), 
+                          (0,5),
+                          (0,16), 
+                          (0,16), 
+                          (-2.4,2.4), 
+                          (0,2), 
+                          (0,6), 
+                          (-3.14,3.14),
+                          (0,127),
+                          (-15,15),
+                          (-15,15),
+                          (-15,15),
+                          (0,1)],
+                "bins":[100, 
+                        100,
+                        100, 
+                        100, 
+                        100, 
+                        3, 
+                        6, 
+                        100,
+                        127,
+                        30,
+                        30,
+                        30,
+                        2]
+}
 
 # How big each chunk read should be, only impacts performance, all tracks are 
 # recombined into a single pandas dataframe
@@ -81,7 +122,7 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
     batch_num += 1
 
     #Add batch dataframe to larger dataframe, only defined branches are added to save memory
-    TrackDF = pd.concat([TrackDF,batch[0][branches]])
+    TrackDF = pd.concat([TrackDF,batch[0][branches_dict['ntuple_names']]])
     print(batch_num," out of: ", len(events))
 
 # Reset index due to double indices in concatanated array
@@ -120,3 +161,13 @@ test.reset_index(inplace=True)
 train.to_pickle("Train/train.pkl") 
 validate.to_pickle("Val/val.pkl") 
 test.to_pickle("Test/test.pkl") 
+
+
+for i in range(len(branches_dict['ntuple_names'])):
+    plt.clf()
+    figure = plot_split_histo(TrackDF['from_PV'], TrackDF[branches_dict['ntuple_names'][i]],
+                              branches_dict['names'][i],
+                              branches_dict['ranges'][i],
+                              branches_dict['bins'][i],)
+    plt.savefig("%s/%s.png" % ("../eval/plots", branches_dict['ntuple_names'][i]+"_histo"))
+    plt.close()

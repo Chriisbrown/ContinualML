@@ -19,6 +19,15 @@ With a standard install of a anaconda environment
 
 `source env.sh`
 
+To install miniconda to setup an anaconda environment
+
+`wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh`
+
+`bash Miniconda3-latest-Linux-x86_64.sh`
+
+`conda env create -f avalanche-environment.yml`
+
+
 ## Structure
 
 `dataset/` contains the functiions for generating datasets from root files as well as default location for Train, Test and Val directories for training and evaluating
@@ -31,14 +40,18 @@ With a standard install of a anaconda environment
 ## Usage
 To generate datasets use in the dataset dir:
 
-`dataset_generator.py path/to/rootfile.root`
+`python dataset_generator.py path/to/rootfile.root`
 
 For large datasets this will take a while 
 
 To run a simple training of the simpleNN model use
 
-`train.py`
+`python train.py`
 
+
+To evaluate a model use
+
+`python eval.py`
 ## Support
 Email c.brown19@imperial.ac.uk for questions
 

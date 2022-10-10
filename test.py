@@ -40,3 +40,8 @@ plt.clf()
 figure = plotPV_roc(true_array,[predicted_array],["simpleNN"])
 plt.savefig("%s/PVROC.png" % "eval/plots")
 plt.close()
+
+plt.clf()
+figure = plot_split_histo(true_array, predicted_array, "Predictions", (0,1),100)
+plt.savefig("%s/PredictionsHisto.png" % "eval/plots")
+plt.close()
