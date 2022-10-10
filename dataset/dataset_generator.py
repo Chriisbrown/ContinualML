@@ -19,59 +19,63 @@ f = sys.argv[1]
 # from_PV defines if a track is primary vertex, this is our target
 
 branches_dict = {'ntuple_names':['trk_MVA1', 
-                                'trk_bendchi2',
-                                'trk_chi2rphi', 
-                                'trk_chi2rz', 
-                                'trk_eta', 
-                                'trk_fake', 
-                                'trk_nstub', 
-                                'trk_phi',
-                                'trk_pt',
-                                'trk_z0',
-                                "pv_reco",
-                                'pv_truth',
-                                'from_PV'
+                                 'trk_bendchi2',
+                                 'trk_chi2rphi', 
+                                 'trk_chi2rz', 
+                                 'trk_eta', 
+                                 'trk_fake', 
+                                 'trk_nstub', 
+                                 'trk_phi',
+                                 'trk_pt',
+                                 'trk_z0',
+                                 "pv_reco",
+                                 'pv_truth',
+                                 'from_PV',
+                                 'delta_z0'
                                 # my_extra_features
                             ],
                   "names":['trk MVA1', 
-                          'trk $\\chi^2_{bend}$',
-                          'trk $\\chi^2_{r\\phi}$', 
-                          'trk $\\chi^2_{rz}$', 
-                          'trk $\\eta$', 
-                          'trk fake', 
-                          'trk #stub', 
-                          'trk $\\phi$ [rad]',
-                          'trk $p_T$ [GeV]',
-                          'trk $z_0$ [cm]',
-                          "$PV_{reco}$ [cm]",
-                          '$PV_{truth}$ [cm]',
-                          'from PV'],
+                           'trk $\\chi^2_{bend}$',
+                           'trk $\\chi^2_{r\\phi}$', 
+                           'trk $\\chi^2_{rz}$', 
+                           'trk $\\eta$', 
+                           'trk fake', 
+                           'trk #stub', 
+                           'trk $\\phi$ [rad]',
+                           'trk $p_T$ [GeV]',
+                           'trk $z_0$ [cm]',
+                           "$PV_{reco}$ [cm]",
+                           '$PV_{truth}$ [cm]',
+                           'from PV',
+                           '|$PV_{reco}$ - $PV_{truth}$| [cm]'],
                 "ranges":[(0,1), 
-                          (0,5),
-                          (0,16), 
-                          (0,16), 
+                          (0,6),
+                          (0,20), 
+                          (0,20), 
                           (-2.4,2.4), 
                           (0,2), 
-                          (0,6), 
+                          (4,7), 
                           (-3.14,3.14),
                           (0,127),
                           (-15,15),
                           (-15,15),
                           (-15,15),
+                          (0,1),
                           (0,1)],
-                "bins":[100, 
-                        100,
-                        100, 
-                        100, 
-                        100, 
+                "bins":[50, 
+                        50,
+                        50, 
+                        50, 
+                        50, 
                         3, 
-                        6, 
-                        100,
+                        3, 
+                        20,
                         127,
-                        30,
-                        30,
-                        30,
-                        2]
+                        50,
+                        50,
+                        50,
+                        2,
+                        50]
 }
 
 # How big each chunk read should be, only impacts performance, all tracks are 
@@ -111,6 +115,7 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
         # Need single varible for training so cast trk_fake==1 as int
         batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
 
+        batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["pv_truth"])
         ##############################################################
 
         # Define other training features here and add name to branches list
@@ -129,7 +134,6 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
 TrackDF.reset_index(inplace=True)
 # Remove any tracks with NA entries
 TrackDF.dropna(inplace=True)
-
 
 # Get random ordered indices of track DF, this will tell us 
 # which tracks to pick out of total dataset when getting train, test, val

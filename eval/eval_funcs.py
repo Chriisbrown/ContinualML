@@ -117,7 +117,7 @@ def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100):
     ax.hist(variable[pv_track_sel],range=range, bins=bins, label="PV tracks", density=True,histtype="stepfilled",color='g',alpha=0.7,linewidth=LINEWIDTH)
     ax.hist(variable[pu_track_sel],range=range, bins=bins, label="PU tracks", density=True,histtype="stepfilled",color='r',alpha=0.7,linewidth=LINEWIDTH)
     ax.set_xlabel(variable_name, horizontalalignment='right', x=1.0)
-    ax.set_ylabel("# Tracks", horizontalalignment='right', y=1.0)
+    ax.set_ylabel("Fraction of Tracks", horizontalalignment='right', y=1.0)
     ax.set_yscale("log")
     ax.legend()
     ax.tick_params(axis='x', which='minor', bottom=False,top=False)

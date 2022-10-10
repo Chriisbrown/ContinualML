@@ -15,11 +15,15 @@ GTT_TrackNtuple_FH_oldTQ.root 300K events
 
 With a standard install of a anaconda environment
 
+Environment will need ~ 2.2 GB free space
+
 `conda env create -f avalanche-environment.yml`
 
 `source env.sh`
 
 To install miniconda to setup an anaconda environment
+
+This installation will need ~ 10 GB free space
 
 `wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh`
 
