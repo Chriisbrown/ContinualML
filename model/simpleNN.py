@@ -21,6 +21,7 @@ class simpleNN(nn.Module):
     nn.init.xavier_uniform_(self.linear3.weight)
     self.act3 = nn.Sigmoid()
   def forward(self, x):
+    x = x.float()
     x = self.linear1(x)
     x = self.act1(x)
     x = self.linear2(x)

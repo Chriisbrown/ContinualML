@@ -10,11 +10,11 @@ Training file for simple model, acts as example of training a pytorch model
 '''
 
 # Define any tansformations here
-MVArandomiser = Randomiser(7,'trk_MVA')
+#MVArandomiser = Randomiser(7,'trk_MVA')
 
 # Create datasets and creae dataloaders for pytorch
-training_data = TrackDataset("dataset/Train/train.pkl",transform=MVArandomiser)
-val_data = TrackDataset("dataset/Val/val.pkl",transform=MVArandomiser)
+training_data = TrackDataset("dataset/Train/train.pkl")
+val_data = TrackDataset("dataset/Val/val.pkl")
 
 train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=16)
 val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=16)
@@ -34,9 +34,6 @@ for epoch in range(epochs):
   # Iterate through batches
   for i, data in enumerate(train_dataloader, 0):
     inputs, labels = data
-    # Cast as float (numpy is double by default)
-    inputs = inputs.float()
-    labels = labels.float()
     # set optimizer to zero grad to remove previous epoch gradients
     optimizer.zero_grad()
     # forward propagation

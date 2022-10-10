@@ -9,10 +9,10 @@ import torch
 Testing file for simple model, acts as example of testing a pytorch model
 '''
 # Define feature transformations
-MVArandomiser = Randomiser(7,'trk_MVA')
+#MVArandomiser = Randomiser(7,'trk_MVA')
 
 # Create datasets and loaders
-test_data = TrackDataset("dataset/Test/test.pkl",transform=MVArandomiser)
+test_data = TrackDataset("dataset/Test/test.pkl")
 test_dataloader = DataLoader(test_data, batch_size=5000, shuffle=True,num_workers=16)
 
 clf = simpleNN()
@@ -25,8 +25,6 @@ true_array = []
 with torch.no_grad():
   for data in test_dataloader:
     inputs, labels = data
-    inputs = inputs.float()
-    labels = labels.float()
     # calculate output by running through the network
     outputs = clf(inputs)
     predicted_array.append(outputs.numpy())

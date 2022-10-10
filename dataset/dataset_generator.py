@@ -31,6 +31,7 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                                  "pv_reco",
                                  'pv_truth',
                                  'from_PV',
+                                 'not_from_PV',
                                  'delta_z0'
                                 # my_extra_features
                             ],
@@ -47,6 +48,7 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                            "$PV_{reco}$ [cm]",
                            '$PV_{truth}$ [cm]',
                            'from PV',
+                           'not_from_PV',
                            '|$PV_{reco}$ - $PV_{truth}$| [cm]'],
                 "ranges":[(0,1), 
                           (0,6),
@@ -61,6 +63,7 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                           (-15,15),
                           (-15,15),
                           (0,1),
+                          (0,1),
                           (0,1)],
                 "bins":[50, 
                         50,
@@ -74,6 +77,7 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                         50,
                         50,
                         50,
+                        2,
                         2,
                         50]
 }
@@ -114,6 +118,7 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
         # trk_fake defines tracks as 0 for fake, 1 for PV and 2 for PU
         # Need single varible for training so cast trk_fake==1 as int
         batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
+        batch[0]["not_from_PV"] = (batch[0]["trk_fake"] != 1).astype(int)
 
         batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["pv_truth"])
         ##############################################################
@@ -166,9 +171,11 @@ train.to_pickle("Train/train.pkl")
 validate.to_pickle("Val/val.pkl") 
 test.to_pickle("Test/test.pkl") 
 
-
+skip_plotting = ["from_PV","not_from_PV","pv_truth","pv_reco","trk_fake"]
 for i in range(len(branches_dict['ntuple_names'])):
     plt.clf()
+    if (branches_dict['ntuple_names'][i] in skip_plotting):
+        pass
     figure = plot_split_histo(TrackDF['from_PV'], TrackDF[branches_dict['ntuple_names'][i]],
                               branches_dict['names'][i],
                               branches_dict['ranges'][i],

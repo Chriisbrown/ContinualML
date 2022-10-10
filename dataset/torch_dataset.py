@@ -24,7 +24,7 @@ class TrackDataset(Dataset):
                                   'trk_phi',
                                   'trk_pt',
                                   'trk_z0',
-                                  "pv_reco"]
+                                  "delta_z0"]
         
         # Binary target features
         self.target_feature = ['from_PV']

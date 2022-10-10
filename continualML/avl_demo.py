@@ -13,19 +13,21 @@ from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive
 
 from torchvision.datasets import MNIST
+from model.simpleNN import simpleNN
+import torch
 
 
-
-Traindata = TrackDataset("../dataset/SmallTest/Train/train.pkl")
-Testdata = TrackDataset("../dataset/SmallTest/Test/test.pkl")
+Traindata = TrackDataset("../dataset/Train/train.pkl")
+Testdata = TrackDataset("../dataset/Test/test.pkl")
 
 scenario = ni_benchmark(
-        Traindata, Testdata, 1, task_labels=False, seed=1234
+        Traindata, Testdata, 20, task_labels=False, seed=1234
     )
 
 
 # MODEL CREATION
-model = SimpleMLP(num_classes=1)
+model = simpleNN()
+model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.
@@ -47,10 +49,11 @@ eval_plugin = EvaluationPlugin(
     timing_metrics(epoch=True, epoch_running=True),
     forgetting_metrics(experience=True, stream=True),
     cpu_usage_metrics(experience=True),
-    confusion_matrix_metrics(num_classes=2, save_image=False,
+    confusion_matrix_metrics(num_classes=1, save_image=False,
                              stream=True),
     disk_usage_metrics(minibatch=True, epoch=True, experience=True, stream=True),
-    loggers=[interactive_logger, text_logger, tb_logger]
+    loggers=[interactive_logger, text_logger, tb_logger],
+    benchmark = scenario
 )
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
