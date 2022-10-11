@@ -1,6 +1,6 @@
 
 from torch.optim import SGD
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, BCELoss
 from dataset.torch_dataset import TrackDataset, Randomiser
 from torch.utils.data import DataLoader
 from avalanche.benchmarks import ni_benchmark
@@ -21,13 +21,13 @@ Traindata = TrackDataset("../dataset/Train/train.pkl")
 Testdata = TrackDataset("../dataset/Test/test.pkl")
 
 scenario = ni_benchmark(
-        Traindata, Testdata, 20, task_labels=False, seed=1234
+        Traindata, Testdata, 5, task_labels=True, seed=1234
     )
 
 
 # MODEL CREATION
 model = simpleNN()
-model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
+#model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.
@@ -58,8 +58,8 @@ eval_plugin = EvaluationPlugin(
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
 cl_strategy = Naive(
-    model, SGD(model.parameters(), lr=0.001, momentum=0.9),
-    CrossEntropyLoss(), train_mb_size=500, train_epochs=1, eval_mb_size=100,
+    model, SGD(model.parameters(), lr=0.01, momentum=0.9),
+    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
     evaluator=eval_plugin)
 
 # TRAINING LOOP
@@ -76,3 +76,6 @@ for experience in scenario.train_stream:
     print('Computing accuracy on the whole test set')
     # test also returns a dictionary which contains all the metric values
     results.append(cl_strategy.eval(scenario.test_stream))
+
+# Save model
+torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL")

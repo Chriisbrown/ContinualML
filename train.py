@@ -16,8 +16,8 @@ Training file for simple model, acts as example of training a pytorch model
 training_data = TrackDataset("dataset/Train/train.pkl")
 val_data = TrackDataset("dataset/Val/val.pkl")
 
-train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=16)
-val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=16)
+train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=8)
+val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=8)
 
 # Create model
 clf = simpleNN()
