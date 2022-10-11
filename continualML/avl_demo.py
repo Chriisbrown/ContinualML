@@ -16,6 +16,8 @@ from torchvision.datasets import MNIST
 from model.simpleNN import simpleNN
 import torch
 
+from metrics import ROC_metrics
+
 
 Traindata = TrackDataset("../dataset/Train/train.pkl")
 Testdata = TrackDataset("../dataset/Test/test.pkl")
@@ -38,21 +40,19 @@ model = simpleNN()
 tb_logger = TensorboardLogger()
 
 # log to text file
-text_logger = TextLogger(open('log.txt', 'a'))
+#text_logger = TextLogger(open('log.txt', 'a'))
 
 # print to stdout
 interactive_logger = InteractiveLogger()
 
 eval_plugin = EvaluationPlugin(
-    accuracy_metrics(minibatch=True, epoch=True, experience=True, stream=True),
-    loss_metrics(minibatch=True, epoch=True, experience=True, stream=True),
+    accuracy_metrics(minibatch=True, epoch=True, experience=True, stream=False),
+    ROC_metrics(minibatch=True,epoch=True,experience=True,stream=False),
+    loss_metrics(minibatch=True, epoch=True, experience=True, stream=False),
     timing_metrics(epoch=True, epoch_running=True),
-    forgetting_metrics(experience=True, stream=True),
-    cpu_usage_metrics(experience=True),
-    confusion_matrix_metrics(num_classes=1, save_image=False,
+    confusion_matrix_metrics(num_classes=1, save_image=True,
                              stream=True),
-    disk_usage_metrics(minibatch=True, epoch=True, experience=True, stream=True),
-    loggers=[interactive_logger, text_logger, tb_logger],
+    loggers=[interactive_logger, tb_logger],
     benchmark = scenario
 )
 

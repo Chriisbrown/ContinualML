@@ -42,13 +42,16 @@ for model in models_dict:
   models_dict[model]['predicted_array'] = predicted_array
 
   plt.clf()
-  figure = plot_split_histo(true_array, predicted_array, models_dict[model]['name'] + "Predictions", (0,1),100)
-  plt.savefig("%s/%s_PredictionsHisto.png" % ("eval/plots",models_dict[model]['name']))
+  figure = plot_split_histo(true_array, predicted_array, model + "Predictions", (0,1),100)
+  plt.savefig("%s/%s_PredictionsHisto.png" % ("eval/plots",model))
   plt.close()
 
 plt.clf()
-figure = plotPV_roc(true_array,models_dict[:]["predicted_array"],
-                               models_dict[:]["name"])
+
+
+
+figure = plotPV_roc(true_array,[models_dict[model]["predicted_array"] for model in models_dict],
+                               [models_dict[model]["name"] for model in models_dict])
 plt.savefig("%s/PVROC.png" % "eval/plots")
 plt.close()
 
