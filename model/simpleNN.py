@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-
+from dataset.torch_dataset import TrackDataset
 # number of features (len of X cols)
-input_dim = 10
+input_dim = len(TrackDataset.training_features)
 # number of hidden layers
 hidden_layers = [25,30]
 # number of classes (unique of y)

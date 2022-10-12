@@ -9,6 +9,7 @@ import torch
 from torch import Tensor
 import sklearn.metrics as metrics
 
+import numpy as np
 
 # a standalone metric implementation
 class ROC(Metric[float]):
@@ -19,10 +20,10 @@ class ROC(Metric[float]):
         """
         Initialize your metric here
         """
-        super().__init__()
+        #super().__init__()
         self.y_array = []
         self.y_true_array = []
-        pass
+        #pass
 
     @torch.no_grad()
     def update(self, predicted_y: Tensor, true_y: Tensor,) -> None:
@@ -32,10 +33,12 @@ class ROC(Metric[float]):
             are supported.
         :return: None.
         """
-        self.y_array.append(predicted_y.to_numpy())
-        self.y_true_array.append(true_y.to_numpy())
+        self.y_array.append(predicted_y.numpy())
+        self.y_true_array.append(true_y.numpy())
 
     def result(self) -> float:
+        self.y_true_array = np.concatenate(self.y_true_array).ravel()
+        self.y_array = np.concatenate(self.y_array).ravel()
         return metrics.roc_auc_score(self.y_true_array,self.y_array)
 
     def reset(self):
@@ -47,14 +50,6 @@ class ROCPluginMetric(GenericPluginMetric[float]):
     This metric will return a `float` value after
     each training epoch
     """
-
-    def __init__(self):
-        """
-        Initialize the metric
-        """
-        super().__init__()
-
-        self._ROC = ROC()
 
     def __init__(self, reset_at, emit_at, mode):
         """Creates the ROC plugin
@@ -69,74 +64,18 @@ class ROCPluginMetric(GenericPluginMetric[float]):
             self._ROC, reset_at=reset_at, emit_at=emit_at, mode=mode
         )
 
-    def reset(self) -> None:
-        """
-        Reset the metric
-        """
-        self._ROC.reset()
+    def reset(self, strategy=None) -> None:
+        self._metric.reset()
 
-    def result(self) -> float:
-        """
-        Emit the result
-        """
-        return self._ROC.result()
+    def result(self, strategy=None) -> float:
+        return self._metric.result()
 
-    def after_training_iteration(self, strategy: 'PluggableStrategy') -> None:
-        """
-        Update the ROC metric with the current
-        predictions and targets
-        """
-        # task labels defined for each experience
-        task_labels = strategy.experience.task_labels
-        if len(task_labels) > 1:
-            # task labels defined for each pattern
-            task_labels = strategy.mb_task_id
-        else:
-            task_labels = task_labels[0]
+    def update(self, strategy):
+        self._ROC.update(
+                strategy.mb_output,
+                strategy.mb_y
+            )
 
-        self._ROC.update(strategy.mb_output, strategy.mb_y, 
-                                     task_labels)
-
-
-    def before_training_epoch(self, strategy: 'PluggableStrategy') -> None:
-        """
-        Reset the accuracy before the epoch begins
-        """
-        self.reset()
-
-    def after_training_epoch(self, strategy: 'PluggableStrategy'):
-        """
-        Emit the result
-        """
-        return self._package_result(strategy)
-        
-        
-    def _package_result(self, strategy):
-        """Taken from `GenericPluginMetric`, check that class out!"""
-        metric_value = self.accuracy_metric.result()
-        add_exp = False
-        plot_x_position = strategy.clock.train_iterations
-
-        if isinstance(metric_value, dict):
-            metrics = []
-            for k, v in metric_value.items():
-                metric_name = get_metric_name(
-                    self, strategy, add_experience=add_exp, add_task=k)
-                metrics.append(MetricValue(self, metric_name, v,
-                                           plot_x_position))
-            return metrics
-        else:
-            metric_name = get_metric_name(self, strategy,
-                                          add_experience=add_exp,
-                                          add_task=True)
-            return [MetricValue(self, metric_name, metric_value,
-                                plot_x_position)]
-
-    def __str__(self):
-        """
-        Here you can specify the name of your metric
-        """
-        return "Top1_ROC_Epoch"
 
 class MinibatchROC(ROCPluginMetric):
     """
