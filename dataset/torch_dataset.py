@@ -11,16 +11,17 @@ class TrackDataset(Dataset):
 
     """
     # Training features used by model, for new ones, define them in dataset generator
-    training_features = [#'trk_MVA1', 
+    training_features = ['trk_MVA1', 
                          'trk_bendchi2',
                          'trk_chi2rphi', 
                          'trk_chi2rz', 
                          'trk_eta', 
                          'trk_nstub', 
-                         #'trk_phi',
+                         'trk_phi',
                          'trk_pt',
-                         #'trk_z0',
-                         "delta_z0"]
+                         'trk_z0',
+                         "pv_reco"
+                         ]
         
         # Binary target features
     target_feature = ['from_PV']
@@ -34,8 +35,8 @@ class TrackDataset(Dataset):
             self.dataframe = self.transform(self.dataframe)
 
         # Cast to numpy, quicker acces when getting items
-        self.X_data = self.dataframe[self.training_features].to_numpy(dtype='double')
-        self.targets = self.dataframe[self.target_feature].to_numpy(dtype='double')
+        self.X_data = self.dataframe[self.training_features].to_numpy(dtype='float')
+        self.targets = self.dataframe[self.target_feature].to_numpy(dtype='float')
         
 
     def __len__(self):
@@ -60,4 +61,23 @@ class Randomiser(object):
 
     def __call__(self, sample):
         sample[self.feature] = self.max*np.random.random()
+        return sample
+
+
+class GaussianSmear(object):
+    """Generic Transformation of track data.
+
+    Sets feature to random number
+
+    Takes floating point max and string feature for training_features as input
+
+    """
+
+    def __init__(self,mean,std,feature):
+        self.mean = mean
+        self.std = std
+        self.feature = feature
+
+    def __call__(self, sample):
+        sample[self.feature] = np.random.normal(loc=self.mean,scale=self.std)+sample[self.feature] 
         return sample

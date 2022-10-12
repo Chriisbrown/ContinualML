@@ -1,4 +1,10 @@
 avalanche/**
 avalanche-demo/**
 *.pkl
-notes.txt
+*.txt
+*.png
+events*
+*.root
+*/__pycache__/**
+model/SavedModels/**
+*.pyc

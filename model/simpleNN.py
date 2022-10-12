@@ -22,7 +22,6 @@ class simpleNN(nn.Module):
     self.act3 = nn.Sigmoid()
     self.double()
   def forward(self, x):
-    #x = x.float()
     x = self.linear1(x)
     x = self.act1(x)
     x = self.linear2(x)

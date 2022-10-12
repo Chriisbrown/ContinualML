@@ -1,5 +1,5 @@
 
-from torch.optim import SGD
+from torch.optim import SGD,Adam
 from torch.nn import CrossEntropyLoss, BCELoss
 from dataset.torch_dataset import TrackDataset, Randomiser
 from torch.utils.data import DataLoader
@@ -17,13 +17,15 @@ from model.simpleNN import simpleNN
 import torch
 
 from metrics import ROC_metrics
+from strategies import ReplayP
 
+from avalanche.training.supervised.strategy_wrappers import SynapticIntelligence
 
 Traindata = TrackDataset("../dataset/Train/train.pkl")
-Testdata = TrackDataset("../dataset/Test/test.pkl")
+Evaldata = TrackDataset("../dataset/Val/val.pkl")
 
 scenario = ni_benchmark(
-        Traindata, Testdata, 5, task_labels=True, seed=1234
+        Traindata, Evaldata, 5, task_labels=True, seed=1234
     )
 
 
@@ -57,10 +59,22 @@ eval_plugin = EvaluationPlugin(
 )
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
-cl_strategy = Naive(
-    model, SGD(model.parameters(), lr=0.01, momentum=0.9),
-    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
-    evaluator=eval_plugin)
+# cl_strategy = Naive(
+#     model, SGD(model.parameters(), lr=0.01, momentum=0.9),
+#     BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
+#     evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
+
+
+cl_strategy = SynapticIntelligence(
+        model,
+        Adam(model.parameters(), lr=0.001),
+        BCELoss(),
+        si_lambda=0.0001,
+        train_mb_size=128,
+        train_epochs=4,
+        eval_mb_size=128,
+        evaluator=eval_plugin,
+    )
 
 # TRAINING LOOP
 print('Starting experiment...')
@@ -78,4 +92,4 @@ for experience in scenario.train_stream:
     results.append(cl_strategy.eval(scenario.test_stream))
 
 # Save model
-torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL")
+torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL_SI")

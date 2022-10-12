@@ -13,10 +13,11 @@ Testing file for simple model, acts as example of testing a pytorch model
 
 # Create datasets and loaders
 test_data = TrackDataset("dataset/Test/test.pkl")
-test_dataloader = DataLoader(test_data, batch_size=5000, shuffle=True,num_workers=16)
+test_dataloader = DataLoader(test_data, batch_size=5000, shuffle=False,num_workers=8)
 
 models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel","name":"simple NN"},
-               "pytorch_cl_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL","name":"simpleNN cl"}}
+               "pytorch_cl_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL","name":"simpleNN replay"},
+               "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_SI","name":"simpleNN SI"}}
 
 
 for model in models_dict:
@@ -40,16 +41,12 @@ for model in models_dict:
   true_array = np.concatenate(true_array).ravel()
 
   models_dict[model]['predicted_array'] = predicted_array
-
   plt.clf()
   figure = plot_split_histo(true_array, predicted_array, model + "Predictions", (0,1),100)
   plt.savefig("%s/%s_PredictionsHisto.png" % ("eval/plots",model))
   plt.close()
 
 plt.clf()
-
-
-
 figure = plotPV_roc(true_array,[models_dict[model]["predicted_array"] for model in models_dict],
                                [models_dict[model]["name"] for model in models_dict])
 plt.savefig("%s/PVROC.png" % "eval/plots")
