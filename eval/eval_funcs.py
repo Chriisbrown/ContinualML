@@ -98,7 +98,7 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
     ax[0].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
 
     ax[1].grid(True)
-    ax[1].set_yscale("log")
+    #ax[1].set_yscale("log")
     ax[1].set_xlabel('Track to Vertex Association True Positive Rate',ha="right",x=1)
     ax[1].set_ylabel('Track to Vertex Association False Positive Rate',ha="right",y=1)
     ax[1].set_xlim([0.75,1])

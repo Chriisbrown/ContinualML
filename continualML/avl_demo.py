@@ -1,10 +1,11 @@
 
 from torch.optim import SGD,Adam
 from torch.nn import CrossEntropyLoss, BCELoss
-from dataset.torch_dataset import TrackDataset, Randomiser
+from dataset.torch_dataset import TrackDataset, Randomiser, GaussianSmear
 from torch.utils.data import DataLoader
 from avalanche.benchmarks import ni_benchmark
 from avalanche.benchmarks.utils import AvalancheDataset
+from avalanche.benchmarks.scenarios import OnlineCLScenario
 from avalanche.evaluation.metrics import forgetting_metrics, accuracy_metrics, \
     loss_metrics, timing_metrics, cpu_usage_metrics, confusion_matrix_metrics, disk_usage_metrics
 from avalanche.models import SimpleMLP
@@ -15,23 +16,33 @@ from avalanche.training.supervised import Naive
 from torchvision.datasets import MNIST
 from model.simpleNN import simpleNN
 import torch
+from torchvision import transforms
 
 from metrics import ROC_metrics
 from strategies import ReplayP
 
 from avalanche.training.supervised.strategy_wrappers import SynapticIntelligence
 
-Traindata = TrackDataset("../dataset/Train/train.pkl")
-Evaldata = TrackDataset("../dataset/Val/val.pkl")
+z0Smear = GaussianSmear(1,1,'trk_z0')
+pTSmear = GaussianSmear(1,1,'trk_pt')
+etaSmear = GaussianSmear(1,1,'trk_eta')
+
+transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
+# Create datasets and loaders
+Traindata_unmodified = TrackDataset("../dataset/Train/train.pkl")
+Traindata_smear = TrackDataset("../dataset/Train/train.pkl",transform=transfom_set)
+
+Evaldata_unmodified = TrackDataset("../dataset/Val/val.pkl")
+Evaldata_smear = TrackDataset("../dataset/Val/val.pkl",transform=transfom_set)
 
 scenario = ni_benchmark(
-        Traindata, Evaldata, 5, task_labels=True, seed=1234
+        Traindata_smear, Evaldata_smear, 5, task_labels=True, seed=1234
     )
 
 
 # MODEL CREATION
 model = simpleNN()
-#model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
+model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.

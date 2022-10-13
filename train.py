@@ -1,26 +1,43 @@
-from dataset.torch_dataset import TrackDataset, Randomiser
+from dataset.torch_dataset import TrackDataset, Randomiser, GaussianSmear
 from torch.utils.data import DataLoader
 from model.simpleNN import simpleNN
 from eval import *
 import torch.nn as nn
 import torch
+from torchvision import transforms
 
 '''
 Training file for simple model, acts as example of training a pytorch model
 '''
+retrain = True
+smear = False
+
+models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel","name":"simple NN umodifed only"},
+               "pytorch_model_smear":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_smear","name":"simple NN smear only"},
+               "pytorch_model_retrain":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
+                }
 
 # Define any tansformations here
-#MVArandomiser = Randomiser(7,'trk_MVA')
+z0Smear = GaussianSmear(1,1,'trk_z0')
+pTSmear = GaussianSmear(1,1,'trk_pt')
+etaSmear = GaussianSmear(1,1,'trk_eta')
+
+if (smear | retrain ):
+  transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
+else: 
+  transfom_set = None
 
 # Create datasets and creae dataloaders for pytorch
-training_data = TrackDataset("dataset/Train/train.pkl")
-val_data = TrackDataset("dataset/Val/val.pkl")
+training_data = TrackDataset("dataset/Train/train.pkl",transfom_set)
+val_data = TrackDataset("dataset/Val/val.pkl",transfom_set)
 
 train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=8)
 val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=8)
 
 # Create model
 clf = simpleNN()
+if retrain:
+  clf.load_state_dict(torch.load(models_dict["pytorch_model"]['file_location']))
 
 # Define loss function (Binary Cross Entropy)
 criterion = nn.BCELoss()
@@ -49,6 +66,11 @@ for epoch in range(epochs):
   print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.5f}')
 
 # Save model
-torch.save(clf.state_dict(), "model/SavedModels/simplemodel")
+if retrain:
+  torch.save(clf.state_dict(),  models_dict["pytorch_model_retrain"]['file_location'])
+elif smear:
+  torch.save(clf.state_dict(),  models_dict["pytorch_model_smear"]['file_location'])
+else:
+  torch.save(clf.state_dict(),  models_dict["pytorch_model"]['file_location'])
 
 
