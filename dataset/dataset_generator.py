@@ -121,6 +121,11 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
         batch[0]["not_from_PV"] = (batch[0]["trk_fake"] != 1).astype(int)
 
         batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["pv_truth"])
+
+        batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
+        batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))
+        batch[0]['trk_z0'] = batch[0]['trk_z0'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['trk_z0']) )
+        batch[0]['pv_reco'] = batch[0]['pv_reco'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['pv_reco']) )
         ##############################################################
 
         # Define other training features here and add name to branches list

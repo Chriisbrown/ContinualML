@@ -3,7 +3,7 @@ from torch.optim import SGD,Adam
 from torch.nn import CrossEntropyLoss, BCELoss
 from dataset.torch_dataset import TrackDataset, Randomiser, GaussianSmear
 from torch.utils.data import DataLoader
-from avalanche.benchmarks import ni_benchmark
+from avalanche.benchmarks import ni_benchmark, generators, utils
 from avalanche.benchmarks.utils import AvalancheDataset
 from avalanche.benchmarks.scenarios import OnlineCLScenario
 from avalanche.evaluation.metrics import forgetting_metrics, accuracy_metrics, \
@@ -36,13 +36,13 @@ Evaldata_unmodified = TrackDataset("../dataset/Val/val.pkl")
 Evaldata_smear = TrackDataset("../dataset/Val/val.pkl",transform=transfom_set)
 
 scenario = ni_benchmark(
-        Traindata_smear, Evaldata_smear, 5, task_labels=True, seed=1234
+        torch.utils.data.ConcatDataset([Traindata_unmodified,Traindata_smear]), 
+        torch.utils.data.ConcatDataset([Evaldata_unmodified,Evaldata_smear]), 
+        2, task_labels=True, shuffle=False
     )
-
-
 # MODEL CREATION
 model = simpleNN()
-model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
+#model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.
@@ -62,30 +62,31 @@ eval_plugin = EvaluationPlugin(
     accuracy_metrics(minibatch=True, epoch=True, experience=True, stream=False),
     ROC_metrics(minibatch=True,epoch=True,experience=True,stream=False),
     loss_metrics(minibatch=True, epoch=True, experience=True, stream=False),
+    forgetting_metrics(experience=True),
     timing_metrics(epoch=True, epoch_running=True),
-    confusion_matrix_metrics(num_classes=1, save_image=True,
+    confusion_matrix_metrics(num_classes=2, save_image=True,
                              stream=True),
     loggers=[interactive_logger, tb_logger],
     benchmark = scenario
 )
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
-# cl_strategy = Naive(
-#     model, SGD(model.parameters(), lr=0.01, momentum=0.9),
-#     BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
-#     evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
+cl_strategy = Naive(
+    model, SGD(model.parameters(), lr=0.01, momentum=0.9),
+    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
+    evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
 
 
-cl_strategy = SynapticIntelligence(
-        model,
-        Adam(model.parameters(), lr=0.001),
-        BCELoss(),
-        si_lambda=0.0001,
-        train_mb_size=128,
-        train_epochs=4,
-        eval_mb_size=128,
-        evaluator=eval_plugin,
-    )
+# cl_strategy = SynapticIntelligence(
+#         model,
+#         Adam(model.parameters(), lr=0.001),
+#         BCELoss(),
+#         si_lambda=0.0001,
+#         train_mb_size=128,
+#         train_epochs=4,
+#         eval_mb_size=128,
+#         evaluator=eval_plugin,
+#     )
 
 # TRAINING LOOP
 print('Starting experiment...')
@@ -103,4 +104,4 @@ for experience in scenario.train_stream:
     results.append(cl_strategy.eval(scenario.test_stream))
 
 # Save model
-torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL_SI")
+torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL_Replay")

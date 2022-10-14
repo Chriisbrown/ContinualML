@@ -39,7 +39,10 @@ class ROC(Metric[float]):
     def result(self) -> float:
         self.y_true_array = np.concatenate(self.y_true_array).ravel()
         self.y_array = np.concatenate(self.y_array).ravel()
-        return metrics.roc_auc_score(self.y_true_array,self.y_array)
+        if len(np.unique(self.y_true_array)) != 2:
+            return 0
+        else:
+            return metrics.roc_auc_score(self.y_true_array,self.y_array)
 
     def reset(self):
         self.y_array = []
