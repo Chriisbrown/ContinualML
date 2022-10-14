@@ -72,6 +72,7 @@ eval_plugin = EvaluationPlugin(
     timing_metrics(epoch=True, epoch_running=True),
     confusion_matrix_metrics(num_classes=2, save_image=True,
                              stream=True),
+    forgetting_metrics(experience=True),
     loggers=[interactive_logger, tb_logger],
     benchmark = scenario
 )
