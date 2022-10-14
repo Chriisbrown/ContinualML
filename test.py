@@ -30,8 +30,8 @@ for dataloader,dataname in zip(dataloaders,datanames):
   models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel","name":"simple NN unmodifed only"},
                "pytorch_model_smear":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_smear","name":"simple NN smear only"},
                "pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
-               #"pytorch_cl_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL","name":"simpleNN replay"},
-               #"pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_SI","name":"simpleNN SI"}
+               #"pytorch_cl_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_Replay","name":"simpleNN replay"},
+               "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_SI","name":"simpleNN SI"}
                }
   for model in models_dict:
 
