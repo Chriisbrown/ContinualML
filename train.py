@@ -17,19 +17,10 @@ models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_lo
                "pytorch_model_retrain":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
                 }
 
-# Define any tansformations here
-z0Smear = GaussianSmear(1,1,'trk_z0')
-pTSmear = GaussianSmear(1,1,'trk_pt')
-etaSmear = GaussianSmear(1,1,'trk_eta')
-
-if (smear | retrain ):
-  transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
-else: 
-  transfom_set = None
 
 # Create datasets and creae dataloaders for pytorch
-training_data = TrackDataset("dataset/Train/train.pkl",transfom_set)
-val_data = TrackDataset("dataset/Val/val.pkl",transfom_set)
+training_data = TrackDataset("dataset/Train/train.pkl")
+val_data = TrackDataset("dataset/Val/val.pkl")
 
 train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=8)
 val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=8)

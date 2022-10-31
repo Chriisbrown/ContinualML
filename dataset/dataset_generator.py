@@ -1,4 +1,5 @@
 import uproot
+import os
 import numpy as np
 import math
 from math import isnan
@@ -13,6 +14,7 @@ pd.options.mode.chained_assignment = None
 np.random.seed(42)
 
 f = sys.argv[1]
+name = sys.argv[2]
 
 # Which branches to create for training
 # pv_reco is the standard FastHisto vertex run in CMSSW
@@ -49,7 +51,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                            '$PV_{truth}$ [cm]',
                            'from PV',
                            'not_from_PV',
-                           '|$PV_{reco}$ - $PV_{truth}$| [cm]'],
+                           '|$PV_{reco}$ - $PV_{truth}$| [cm]',
+                           ],
                 "ranges":[(0,1), 
                           (0,6),
                           (0,20), 
@@ -64,7 +67,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                           (-15,15),
                           (0,1),
                           (0,1),
-                          (0,1)],
+                          (0,1),
+                          ],
                 "bins":[50, 
                         50,
                         50, 
@@ -79,7 +83,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                         50,
                         2,
                         2,
-                        50]
+                        50,
+                        ]
 }
 
 # How big each chunk read should be, only impacts performance, all tracks are 
@@ -122,10 +127,10 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
 
         batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["pv_truth"])
 
-        batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
-        batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))
-        batch[0]['trk_z0'] = batch[0]['trk_z0'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['trk_z0']) )
-        batch[0]['pv_reco'] = batch[0]['pv_reco'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['pv_reco']) )
+        #batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
+        #batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))
+        #batch[0]['trk_z0'] = batch[0]['trk_z0'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['trk_z0']) )
+        #batch[0]['pv_reco'] = batch[0]['pv_reco'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['pv_reco']) )
         ##############################################################
 
         # Define other training features here and add name to branches list
@@ -172,9 +177,16 @@ validate.reset_index(inplace=True)
 test.reset_index(inplace=True)
 
 # Save, can modify these locations as needed
-train.to_pickle("Train/train.pkl") 
-validate.to_pickle("Val/val.pkl") 
-test.to_pickle("Test/test.pkl") 
+os.system("mkdir "+name)
+os.system("mkdir "+name+ "/Train")
+os.system("mkdir "+name+ "/Test")
+os.system("mkdir "+name+ "/Val")
+os.system("mkdir "+name+ "/Plots")
+
+
+train.to_pickle(name+"/Train/train.pkl") 
+validate.to_pickle(name+"/Val/val.pkl") 
+test.to_pickle(name+"/Test/test.pkl") 
 
 skip_plotting = ["from_PV","not_from_PV","pv_truth","pv_reco","trk_fake"]
 for i in range(len(branches_dict['ntuple_names'])):
@@ -185,5 +197,5 @@ for i in range(len(branches_dict['ntuple_names'])):
                               branches_dict['names'][i],
                               branches_dict['ranges'][i],
                               branches_dict['bins'][i],)
-    plt.savefig("%s/%s.png" % ("../eval/plots", branches_dict['ntuple_names'][i]+"_histo"))
+    plt.savefig("%s/%s.png" % (name+"/Plots", branches_dict['ntuple_names'][i]+"_histo"))
     plt.close()
