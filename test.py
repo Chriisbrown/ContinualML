@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch
 from torchvision import transforms
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 '''
 Testing file for simple model, acts as example of testing a pytorch model
