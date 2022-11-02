@@ -50,7 +50,25 @@ matplotlib.rcParams['ytick.minor.width'] = 4
 
 colours=["red","green","blue","orange","purple","yellow"]
 
-def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
+def calculate_rates(actual,prediction,Nthresholds=5):
+    thresholds = np.linspace(0,1,Nthresholds)
+    precision = []
+    recall = []
+    FPR= []
+
+    auc = metrics.roc_auc_score(actual,prediction)
+
+    for j,threshold in enumerate(thresholds):
+            # Find number of true negatives, false positive, false negatives and true positives when decision bounary == threshold
+            print("Threshold: ",j,"out of ",Nthresholds)
+            tn, fp, fn, tp = metrics.confusion_matrix(actual, prediction>threshold).ravel()
+            precision.append( tp / (tp + fp) )
+            recall.append(tp / (tp + fn) )
+            FPR.append(fp / (fp + tn) )
+
+    return [precision,recall,FPR,auc]
+
+def plotPV_roc(predictions,rates,names,Nthresholds=50,colours=colours,title="None"):
     '''
     Plots reciever operating characteristic curve for output of a predicition model
 
@@ -69,26 +87,14 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
     items = 0
 
     # Iterate through predictions
-    for i,prediction in enumerate(predictions):
-
-        precision = []
-        recall = []
-        FPR= []
-
-        thresholds = np.linspace(0,1,Nthresholds)
-
-        #Iterate through thresholds
-        for j,threshold in enumerate(thresholds):
-            print(str(names[i]) + " Testing ROC threshold: "+str(j) + " out of "+str(len(thresholds)))
-            # Find number of true negatives, false positive, false negatives and true positives when decision bounary == threshold
-            tn, fp, fn, tp = metrics.confusion_matrix(actual, prediction>threshold).ravel()
-            precision.append( tp / (tp + fp) )
-            recall.append(tp / (tp + fn) )
-            FPR.append(fp / (fp + tn) )
+    for i,rate in enumerate(rates):
+        precision = rate[0]
+        recall = rate[1]
+        FPR= rate[2]
 
         # Plot precision recall and ROC curves
         ax[0].plot(recall,precision,label=str(names[i]),linewidth=LINEWIDTH,color=colours[items])
-        ax[1].plot(recall,FPR,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(names[i],metrics.roc_auc_score(actual,prediction)),LEGEND_WIDTH)),color=colours[items])
+        ax[1].plot(recall,FPR,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(names[i],rate[3]),LEGEND_WIDTH)),color=colours[items])
         items += 1
 
     ax[0].grid(True)
@@ -98,17 +104,18 @@ def plotPV_roc(actual,predictions,names,Nthresholds=50,colours=colours):
     ax[0].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
 
     ax[1].grid(True)
-    #ax[1].set_yscale("log")
+    ax[1].set_yscale("log")
     ax[1].set_xlabel('Track to Vertex Association True Positive Rate',ha="right",x=1)
     ax[1].set_ylabel('Track to Vertex Association False Positive Rate',ha="right",y=1)
     ax[1].set_xlim([0.75,1])
     ax[1].set_ylim([1e-2,1])
     ax[1].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
+    plt.suptitle(title)
     plt.tight_layout()
     return fig
 
 
-def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100):
+def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100,title="None"):
     pv_track_sel = actual == 1
     pu_track_sel = actual == 0
     fig,ax = plt.subplots(1,1,figsize=(12,10))
@@ -121,6 +128,7 @@ def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100):
     ax.set_yscale("log")
     ax.legend()
     ax.tick_params(axis='x', which='minor', bottom=False,top=False)
+    plt.suptitle(title)
     plt.tight_layout()
 
     return fig

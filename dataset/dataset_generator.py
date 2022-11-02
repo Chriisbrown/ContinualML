@@ -13,6 +13,7 @@ pd.options.mode.chained_assignment = None
 # Random seed for dataset splitting
 np.random.seed(42)
 
+rootdir = "/home/cebrown/Documents/Datasets/VertexDatasets/OldKFGTTData_EmuTQ/"
 f = sys.argv[1]
 name = sys.argv[2]
 
@@ -96,7 +97,7 @@ batch_num = 0
 train_fraction = 0.7
 val_fraction = 0.1
 
-events = uproot.open(f+':L1TrackNtuple/eventTree')
+events = uproot.open(rootdir+f+':L1TrackNtuple/eventTree')
 #Define blank dataframe for tracks
 TrackDF = pd.DataFrame()
 
@@ -111,13 +112,13 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
         #Create blank array for PV position same length as track data for this event
         pvs = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
         # Fill array with pv_l1Reco for event track in event
-        pvs.fill(batch[2]['pv_L1reco'][batch_num*chunkread + ievt][0])
+        pvs.fill(batch[3]['pv_L1reco'][batch_num*chunkread + ievt][0])
         # Put array into batch dataframe
         batch[0]["pv_reco"][batch_num*chunkread + ievt] = pvs
 
         # Repeat for truth level vertex position
         pv_t = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
-        pv_t.fill(batch[2]['pv_MC'][batch_num*chunkread + ievt][0])
+        pv_t.fill(batch[3]['pv_MC'][batch_num*chunkread + ievt][0])
         batch[0]["pv_truth"][batch_num*chunkread + ievt] = pv_t
 
         # trk_fake defines tracks as 0 for fake, 1 for PV and 2 for PU
@@ -125,7 +126,7 @@ for batch in events.iterate(step_size=chunkread, library='pd'):
         batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
         batch[0]["not_from_PV"] = (batch[0]["trk_fake"] != 1).astype(int)
 
-        batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["pv_truth"])
+        batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["trk_z0"])
 
         #batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
         #batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))

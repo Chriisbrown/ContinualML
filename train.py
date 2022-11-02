@@ -9,18 +9,18 @@ from torchvision import transforms
 '''
 Training file for simple model, acts as example of training a pytorch model
 '''
-retrain = True
+retrain = False
 smear = False
 
-models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel","name":"simple NN umodifed only"},
+models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/modelTTfull","name":"simple NN umodifed only"},
                "pytorch_model_smear":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_smear","name":"simple NN smear only"},
                "pytorch_model_retrain":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
                 }
 
 
 # Create datasets and creae dataloaders for pytorch
-training_data = TrackDataset("dataset/Train/train.pkl")
-val_data = TrackDataset("dataset/Val/val.pkl")
+training_data = TrackDataset("dataset/TTfull/Train/train.pkl")
+val_data = TrackDataset("dataset/TTfull/Val/val.pkl")
 
 train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=8)
 val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=8)

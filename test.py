@@ -21,7 +21,7 @@ transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
 test_data_unmodified = TrackDataset("dataset/Test/test.pkl")
 test_dataloader_unmodified = DataLoader(test_data_unmodified, batch_size=5000, shuffle=False,num_workers=8)
 
-test_data_smear = TrackDataset("dataset/Test/test.pkl",transform=transfom_set)
+test_data_smear = TrackDataset("dataset/Test/test.pkl")
 test_dataloader_smear = DataLoader(test_data_smear, batch_size=5000, shuffle=False,num_workers=8)
 
 dataloaders = [test_dataloader_unmodified,test_dataloader_smear]

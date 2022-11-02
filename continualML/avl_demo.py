@@ -23,26 +23,40 @@ from strategies import ReplayP
 
 from avalanche.training.supervised.strategy_wrappers import SynapticIntelligence
 
-z0Smear = GaussianSmear(1,1,'trk_z0')
-pTSmear = GaussianSmear(1,1,'trk_pt')
-etaSmear = GaussianSmear(1,1,'trk_eta')
-
-transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
 # Create datasets and loaders
-Traindata_unmodified = TrackDataset("../dataset/Train/train.pkl")
-Traindata_smear = TrackDataset("../dataset/Train/train.pkl",transform=transfom_set)
+Traindata = TrackDataset("../dataset/TTfull/Train/train.pkl")
+Traindata_v1 = TrackDataset("../dataset/TTv1/Train/train.pkl")
+Traindata_v2 = TrackDataset("../dataset/TTv2/Train/train.pkl")
+Traindata_v3 = TrackDataset("../dataset/TTv3/Train/train.pkl")
+Traindata_v4 = TrackDataset("../dataset/TTv4/Train/train.pkl")
+Traindata_v5 = TrackDataset("../dataset/TTv5/Train/train.pkl")
 
-Evaldata_unmodified = TrackDataset("../dataset/Val/val.pkl")
-Evaldata_smear = TrackDataset("../dataset/Val/val.pkl",transform=transfom_set)
+Evaldata = TrackDataset("../dataset/TTfull/Val/val.pkl")
+Evaldata_v1 = TrackDataset("../dataset/TTv1/Val/val.pkl")
+Evaldata_v2 = TrackDataset("../dataset/TTv2/Val/val.pkl")
+Evaldata_v3 = TrackDataset("../dataset/TTv3/Val/val.pkl")
+Evaldata_v4 = TrackDataset("../dataset/TTv4/Val/val.pkl")
+Evaldata_v5 = TrackDataset("../dataset/TTv5/Val/val.pkl")
+
+
+train_fixed_exp_assignment = [[i for i in range(len(Traindata))],
+                              [i + len(Traindata) for i in range(len(Traindata_v1))],
+                              [i + len(Traindata) + len(Traindata_v1) for i in range(len(Traindata_v2))],
+                              [i + len(Traindata) + len(Traindata_v1) + len(Traindata_v2) for i in range(len(Traindata_v3))],
+                              [i + len(Traindata) + len(Traindata_v1) + len(Traindata_v2) + len(Traindata_v4) for i in range(len(Traindata_v4))],
+                              [i + len(Traindata) + len(Traindata_v1) + len(Traindata_v2) + len(Traindata_v4) + len(Traindata_v5) for i in range(len(Traindata_v5))]
+                       ]
+
+#print(train_fixed_exp_assignment)
 
 scenario = ni_benchmark(
-        torch.utils.data.ConcatDataset([Traindata_unmodified,Traindata_smear]), 
-        torch.utils.data.ConcatDataset([Evaldata_unmodified,Evaldata_smear]), 
-        2, task_labels=True, shuffle=False
+        torch.utils.data.ConcatDataset([Traindata,Traindata_v1,Traindata_v2,Traindata_v3,Traindata_v4,Traindata_v5]), 
+        torch.utils.data.ConcatDataset([Evaldata,Evaldata_v1,Evaldata_v2,Evaldata_v3,Evaldata_v4,Evaldata_v5]), 
+        6, task_labels=False, shuffle=False, fixed_exp_assignment=train_fixed_exp_assignment
     )
 # MODEL CREATION
 model = simpleNN()
-#model.load_state_dict(torch.load("../model/SavedModels/simplemodel"))
+#model.load_state_dict(torch.load("../model/SavedModels/modelTTfull"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
 # The evaluation plugin manages the metrics computation.
@@ -71,22 +85,22 @@ eval_plugin = EvaluationPlugin(
 )
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
-cl_strategy = Naive(
-    model, SGD(model.parameters(), lr=0.01, momentum=0.9),
-    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
-    evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
+# cl_strategy = Naive(
+#     model, SGD(model.parameters(), lr=0.01, momentum=0.9),
+#     BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
+#     evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
 
 
-# cl_strategy = SynapticIntelligence(
-#         model,
-#         Adam(model.parameters(), lr=0.001),
-#         BCELoss(),
-#         si_lambda=0.0001,
-#         train_mb_size=128,
-#         train_epochs=4,
-#         eval_mb_size=128,
-#         evaluator=eval_plugin,
-#     )
+cl_strategy = SynapticIntelligence(
+        model,
+        Adam(model.parameters(), lr=0.001),
+        BCELoss(),
+        si_lambda=0.0001,
+        train_mb_size=128,
+        train_epochs=4,
+        eval_mb_size=128,
+        evaluator=eval_plugin,
+    )
 
 # TRAINING LOOP
 print('Starting experiment...')
@@ -104,4 +118,4 @@ for experience in scenario.train_stream:
     results.append(cl_strategy.eval(scenario.test_stream))
 
 # Save model
-torch.save(model.state_dict(), "../model/SavedModels/simplemodel_CL_Replay")
+torch.save(model.state_dict(), "../model/SavedModels/modelTTfull_CL_SI")
