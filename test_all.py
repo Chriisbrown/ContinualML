@@ -16,10 +16,10 @@ Testing file for simple model, acts as example of testing a pytorch model
 
 list_of_files = ["TTfull","TTv1","TTv2","TTv3","TTv4","TTv5"]
 
-models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull","name":"simple NN unmodifed only"},
-              "pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/retrainedmodelTTfull","name":"simple NN retrained"},
-              "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_SI","name":"simple NN SI"},
-              "pytorch_cl_model_replay":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_Replay","name":"simple NN Replay"}
+models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull","name":"NN Baseline"},
+               "pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/retrainedmodelTTfull","name":"NN Retrained"},
+               "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_SI","name":"NN SI"},
+               "pytorch_cl_model_replay":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_Replay","name":"NN Replay"}
               }
 
 for i,dataset in enumerate(list_of_files):
@@ -54,13 +54,12 @@ for i,dataset in enumerate(list_of_files):
 
     plt.clf()
     figure = plot_split_histo(true_array, predicted_array, models_dict[model]["name"] + " Predictions", (0,1),100,
-                              model+" Performance On: "+dataset)
+                              models_dict[model]["name"]+" Performance On: "+dataset)
     plt.savefig("%s/%s_PredictionsHisto_%s.png" % ("eval/performanceplots",model,dataset))
     plt.close()
 
   plt.clf()
-  figure = plotPV_roc([models_dict[model]["predicted_array"][i] for model in models_dict],
-                      [models_dict[model]["rates"][i] for model in models_dict],
+  figure = plotPV_roc([models_dict[model]["rates"][i] for model in models_dict],
                       [models_dict[model]["name"] for model in models_dict],
                       title="All Model's Performance On: "+dataset)
   plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots",dataset))
@@ -68,30 +67,26 @@ for i,dataset in enumerate(list_of_files):
 
 
 plt.clf()
-figure = plotPV_roc(models_dict["pytorch_model"]["predicted_array"],
-                    models_dict["pytorch_model"]["rates"],
-                    list_of_files,title="Simple Model Initial Training Only")
-plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots","SimpleModelALL"))
+figure = plotPV_roc(models_dict["pytorch_model"]["rates"],
+                    list_of_files,title="Baseline Model")
+plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots","BaselineModelALL"))
 plt.close()
 
 plt.clf()
-figure = plotPV_roc(models_dict["pytorch_model_retrained"]["predicted_array"],
-                    models_dict["pytorch_model_retrained"]["rates"],
-                    list_of_files,title="Simple Model Retrained")
+figure = plotPV_roc(models_dict["pytorch_model_retrained"]["rates"],
+                    list_of_files,title="Model Retrained")
 plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots","RetrainedModelALL"))
 plt.close()
 
 plt.clf()
-figure = plotPV_roc(models_dict["pytorch_cl_model_replay"]["predicted_array"],
-                    models_dict["pytorch_cl_model_replay"]["rates"],
-                    list_of_files,title="Simple Model Retrained Through Replay")
+figure = plotPV_roc(models_dict["pytorch_cl_model_replay"]["rates"],
+                    list_of_files,title="Model Retrained Through Replay")
 plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots","ReplayModelALL"))
 plt.close()
 
 plt.clf()
-figure = plotPV_roc(models_dict["pytorch_cl_model_si"]["predicted_array"],
-                    models_dict["pytorch_cl_model_si"]["rates"],
-                    list_of_files, title="Simple Model Retrained Through SI")
+figure = plotPV_roc(models_dict["pytorch_cl_model_si"]["rates"],
+                    list_of_files, title="Model Retrained Through SI")
 plt.savefig("%s/PVROC_%s.png" % ("eval/performanceplots","SIModelALL"))
 plt.close()
 

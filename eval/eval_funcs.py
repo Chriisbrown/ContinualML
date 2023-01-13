@@ -50,7 +50,7 @@ matplotlib.rcParams['ytick.minor.width'] = 4
 
 colours=["red","green","blue","orange","purple","yellow"]
 
-def calculate_rates(actual,prediction,Nthresholds=5):
+def calculate_rates(actual,prediction,Nthresholds=50):
     thresholds = np.linspace(0,1,Nthresholds)
     precision = []
     recall = []
@@ -68,7 +68,7 @@ def calculate_rates(actual,prediction,Nthresholds=5):
 
     return [precision,recall,FPR,auc]
 
-def plotPV_roc(predictions,rates,names,Nthresholds=50,colours=colours,title="None"):
+def plotPV_roc(rates,names,colours=colours,title="None"):
     '''
     Plots reciever operating characteristic curve for output of a predicition model
 

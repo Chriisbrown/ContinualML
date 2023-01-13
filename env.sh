@@ -20,6 +20,6 @@ fi
 #export PATH=~/anaconda3/envs/avalanche-dev-env/bin/python:$PATH
 export PYTHONPATH=$PWD:$PYTHONPATH 
 
-mkdir dataset/Test
-mkdir dataset/Train
-mkdir dataset/Val
+# mkdir dataset/Test
+# mkdir dataset/Train
+# mkdir dataset/Val
