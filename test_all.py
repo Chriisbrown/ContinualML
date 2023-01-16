@@ -1,3 +1,4 @@
+import os
 from dataset.torch_dataset import TrackDataset, Randomiser, GaussianSmear
 from torch.utils.data import DataLoader
 from model.simpleNN import simpleNN
@@ -21,6 +22,8 @@ models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'rates':
                "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_SI","name":"NN SI"},
                "pytorch_cl_model_replay":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull_CL_Replay","name":"NN Replay"}
               }
+
+os.system("mkdir eval/performanceplots")
 
 for i,dataset in enumerate(list_of_files):
 

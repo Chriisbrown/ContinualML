@@ -11,7 +11,7 @@ class TrackDataset(Dataset):
 
     """
     # Training features used by model, for new ones, define them in dataset generator
-    training_features = ['trk_MVA1', 
+    training_features = [#'trk_MVA1', 
                          'trk_bendchi2',
                          'trk_chi2rphi', 
                          'trk_chi2rz', 
@@ -20,11 +20,10 @@ class TrackDataset(Dataset):
                          'trk_phi',
                          'trk_pt',
                          'trk_z0',
-                         "delta_z0"
                          ]
         
         # Binary target features
-    target_feature = ['from_PV']
+    target_feature = ['real']
 
     def __init__(self, dataset_dir, transform=None ):
         self.dataset_dir = dataset_dir

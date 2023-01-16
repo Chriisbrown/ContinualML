@@ -31,11 +31,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                                  'trk_phi',
                                  'trk_pt',
                                  'trk_z0',
-                                 "pv_reco",
-                                 'pv_truth',
-                                 'from_PV',
-                                 'not_from_PV',
-                                 'delta_z0'
+                                 'real',
+                                 'fake',
                                 # my_extra_features
                             ],
                   "names":['trk MVA1', 
@@ -48,11 +45,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                            'trk $\\phi$ [rad]',
                            'trk $p_T$ [GeV]',
                            'trk $z_0$ [cm]',
-                           "$PV_{reco}$ [cm]",
-                           '$PV_{truth}$ [cm]',
-                           'from PV',
-                           'not_from_PV',
-                           '|$PV_{reco}$ - $PV_{truth}$| [cm]',
+                           'real',
+                           'fake',
                            ],
                 "ranges":[(0,1), 
                           (0,6),
@@ -64,11 +58,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                           (-3.14,3.14),
                           (0,127),
                           (-15,15),
-                          (-15,15),
-                          (-15,15),
                           (0,1),
-                          (0,1),
-                          (0,1),
+                          (0,1)
                           ],
                 "bins":[50, 
                         50,
@@ -80,11 +71,8 @@ branches_dict = {'ntuple_names':['trk_MVA1',
                         20,
                         127,
                         50,
-                        50,
-                        50,
                         2,
-                        2,
-                        50,
+                        2
                         ]
 }
 
@@ -105,40 +93,9 @@ TrackDF = pd.DataFrame()
 for batch in events.iterate(step_size=chunkread, library='pd'):
     # Create some additional entries in batch dataframe, need to be same dimensions
     # as tracks not events. Jagged arrays prevent this being standardised
-    batch[0]['pv_reco'] = batch[0]['trk_MVA1']
-    batch[0]['pv_truth'] = batch[0]['trk_MVA1']
     # Iterate through events in batch
-    for ievt in range(len(batch[0].reset_index(level=1).index.value_counts())):
-        #Create blank array for PV position same length as track data for this event
-        pvs = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
-        # Fill array with pv_l1Reco for event track in event
-        pvs.fill(batch[3]['pv_L1reco'][batch_num*chunkread + ievt][0])
-        # Put array into batch dataframe
-        batch[0]["pv_reco"][batch_num*chunkread + ievt] = pvs
-
-        # Repeat for truth level vertex position
-        pv_t = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
-        pv_t.fill(batch[3]['pv_MC'][batch_num*chunkread + ievt][0])
-        batch[0]["pv_truth"][batch_num*chunkread + ievt] = pv_t
-
-        # trk_fake defines tracks as 0 for fake, 1 for PV and 2 for PU
-        # Need single varible for training so cast trk_fake==1 as int
-        batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
-        batch[0]["not_from_PV"] = (batch[0]["trk_fake"] != 1).astype(int)
-
-        batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["trk_z0"])
-
-        #batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
-        #batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))
-        #batch[0]['trk_z0'] = batch[0]['trk_z0'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['trk_z0']) )
-        #batch[0]['pv_reco'] = batch[0]['pv_reco'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['pv_reco']) )
-        ##############################################################
-
-        # Define other training features here and add name to branches list
-
-        # batch[0]["my_feautre"] = batch[0]["pv_reco"] ** 2
-
-        ##############################################################
+    batch[0]["real"] = (batch[0]["trk_fake"] != 0).astype(int)
+    batch[0]["fake"] = (batch[0]["trk_fake"] == 0).astype(int)
 
     batch_num += 1
 
@@ -189,12 +146,12 @@ train.to_pickle(name+"/Train/train.pkl")
 validate.to_pickle(name+"/Val/val.pkl") 
 test.to_pickle(name+"/Test/test.pkl") 
 
-skip_plotting = ["from_PV","not_from_PV","pv_truth","pv_reco","trk_fake"]
+skip_plotting = ["real","fake","trk_fake"]
 for i in range(len(branches_dict['ntuple_names'])):
     plt.clf()
     if (branches_dict['ntuple_names'][i] in skip_plotting):
         pass
-    figure = plot_split_histo(TrackDF['from_PV'], TrackDF[branches_dict['ntuple_names'][i]],
+    figure = plot_split_histo(TrackDF['real'], TrackDF[branches_dict['ntuple_names'][i]],
                               branches_dict['names'][i],
                               branches_dict['ranges'][i],
                               branches_dict['bins'][i],)

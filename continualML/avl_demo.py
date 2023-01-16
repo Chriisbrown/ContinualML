@@ -85,22 +85,22 @@ eval_plugin = EvaluationPlugin(
 )
 
 # CREATE THE STRATEGY INSTANCE (NAIVE)
-cl_strategy = Naive(
-    model, SGD(model.parameters(), lr=0.01, momentum=0.9),
-    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
-    evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
+# cl_strategy = Naive(
+#     model, SGD(model.parameters(), lr=0.01, momentum=0.9),
+#     BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
+#     evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
 
 
-# cl_strategy = SynapticIntelligence(
-#         model,
-#         Adam(model.parameters(), lr=0.001),
-#         BCELoss(),
-#         si_lambda=0.0001,
-#         train_mb_size=128,
-#         train_epochs=4,
-#         eval_mb_size=128,
-#         evaluator=eval_plugin,
-#     )
+cl_strategy = SynapticIntelligence(
+        model,
+        Adam(model.parameters(), lr=0.001),
+        BCELoss(),
+        si_lambda=0.0001,
+        train_mb_size=128,
+        train_epochs=4,
+        eval_mb_size=128,
+        evaluator=eval_plugin,
+    )
 
 # TRAINING LOOP
 print('Starting experiment...')
@@ -118,4 +118,4 @@ for experience in scenario.train_stream:
     results.append(cl_strategy.eval(scenario.test_stream))
 
 # Save model
-torch.save(model.state_dict(), "../model/SavedModels/modelTTfull_CL_Replay")
+torch.save(model.state_dict(), "../model/SavedModels/modelTTfull_CL_SI")
