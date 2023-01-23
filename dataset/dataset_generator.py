@@ -9,9 +9,23 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 from eval import *
-pd.options.mode.chained_assignment = None
+from sklearn.model_selection import train_test_split
+
 # Random seed for dataset splitting
 np.random.seed(42)
+
+def CreateHisto(value,weight, res_func, return_index = False, nbins=256, max_z0=15,factor=1):
+
+    hist,bin_edges = np.histogram(value,nbins,range=(-1*max_z0,max_z0),weights=weight*res_func,density=True)
+    hist = np.clip(hist,0,1)
+    
+    return hist/factor,bin_edges
+
+def linear_res_function(x,return_bool = False):
+        if return_bool:
+            return np.full_like(x,True).astype(bool)
+        else:
+            return np.ones_like(x)
 
 rootdir = "/home/cebrown/Documents/Datasets/VertexDatasets/OldKFGTTData_EmuTQ/"
 f = sys.argv[1]
@@ -21,161 +35,83 @@ name = sys.argv[2]
 # pv_reco is the standard FastHisto vertex run in CMSSW
 # from_PV defines if a track is primary vertex, this is our target
 
-branches_dict = {'ntuple_names':['trk_MVA1', 
-                                 'trk_bendchi2',
-                                 'trk_chi2rphi', 
-                                 'trk_chi2rz', 
-                                 'trk_eta', 
-                                 'trk_fake', 
-                                 'trk_nstub', 
-                                 'trk_phi',
-                                 'trk_pt',
-                                 'trk_z0',
-                                 "pv_reco",
-                                 'pv_truth',
-                                 'from_PV',
-                                 'not_from_PV',
-                                 'delta_z0'
-                                # my_extra_features
-                            ],
-                  "names":['trk MVA1', 
-                           'trk $\\chi^2_{bend}$',
-                           'trk $\\chi^2_{r\\phi}$', 
-                           'trk $\\chi^2_{rz}$', 
-                           'trk $\\eta$', 
-                           'trk fake', 
-                           'trk #stub', 
-                           'trk $\\phi$ [rad]',
-                           'trk $p_T$ [GeV]',
-                           'trk $z_0$ [cm]',
-                           "$PV_{reco}$ [cm]",
-                           '$PV_{truth}$ [cm]',
-                           'from PV',
-                           'not_from_PV',
-                           '|$PV_{reco}$ - $PV_{truth}$| [cm]',
-                           ],
-                "ranges":[(0,1), 
-                          (0,6),
-                          (0,20), 
-                          (0,20), 
-                          (-2.4,2.4), 
-                          (0,2), 
-                          (4,7), 
-                          (-3.14,3.14),
-                          (0,127),
-                          (-15,15),
-                          (-15,15),
-                          (-15,15),
-                          (0,1),
-                          (0,1),
-                          (0,1),
-                          ],
-                "bins":[50, 
-                        50,
-                        50, 
-                        50, 
-                        50, 
-                        3, 
-                        3, 
-                        20,
-                        127,
-                        50,
-                        50,
-                        50,
-                        2,
-                        2,
-                        50,
-                        ]
-}
+nfeatures = 10
+nbins = 256
+max_z0 = 20.46912512
+
+histo_names = ["$p_T$ ","$\eta$ ","MVA ","$\chi^2_{R\phi}$ ","$\chi^2_{rz}$ ","$\chi^2_{bend}$ ","$\phi$ ","# stub ","$\\frac{1}{\eta^2}$ ","Tracks","Vertex"][::-1]
+
 
 # How big each chunk read should be, only impacts performance, all tracks are 
 # recombined into a single pandas dataframe
 chunkread = 5000
 batch_num = 0
+num_histos = 0
+ 
 # How big is our training and validation fractions, rest is testing
 # train_fraction + val_fraction + test_fraction = 1
 train_fraction = 0.7
 val_fraction = 0.1
 
 events = uproot.open(rootdir+f+':L1TrackNtuple/eventTree')
+num_events = events.num_entries
 #Define blank dataframe for tracks
-TrackDF = pd.DataFrame()
-
+Histograms = np.ndarray([num_events,nfeatures,nbins])
+Vertices = np.ndarray([num_events])
 #Iterate through events
 for batch in events.iterate(step_size=chunkread, library='pd'):
+
     # Create some additional entries in batch dataframe, need to be same dimensions
-    # as tracks not events. Jagged arrays prevent this being standardised
-    batch[0]['pv_reco'] = batch[0]['trk_MVA1']
-    batch[0]['pv_truth'] = batch[0]['trk_MVA1']
-    # Iterate through events in batch
+    # as tracks not events. Jagged arrays prevent this being standardised    # Iterate through events in batch
     for ievt in range(len(batch[0].reset_index(level=1).index.value_counts())):
-        #Create blank array for PV position same length as track data for this event
-        pvs = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
-        # Fill array with pv_l1Reco for event track in event
-        pvs.fill(batch[3]['pv_L1reco'][batch_num*chunkread + ievt][0])
-        # Put array into batch dataframe
-        batch[0]["pv_reco"][batch_num*chunkread + ievt] = pvs
 
-        # Repeat for truth level vertex position
-        pv_t = np.ones(len(batch[0]["trk_pt"][batch_num*chunkread + ievt]))
-        pv_t.fill(batch[3]['pv_MC'][batch_num*chunkread + ievt][0])
-        batch[0]["pv_truth"][batch_num*chunkread + ievt] = pv_t
+        print("Event: ", ievt, " out of ", len(batch[0].reset_index(level=1).index.value_counts()))
 
-        # trk_fake defines tracks as 0 for fake, 1 for PV and 2 for PU
-        # Need single varible for training so cast trk_fake==1 as int
-        batch[0]["from_PV"] = (batch[0]["trk_fake"] == 1).astype(int)
-        batch[0]["not_from_PV"] = (batch[0]["trk_fake"] != 1).astype(int)
+        trk_overEta = 1/(0.1+0.2*(batch[0]['trk_eta'][batch_num*chunkread + ievt])**2)
+        ntrk = (batch[0]['trk_fake'][batch_num*chunkread + ievt] >= 0).astype(int)
 
-        batch[0]["delta_z0"] = abs(batch[0]["pv_reco"] - batch[0]["trk_z0"])
+        pt_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_pt'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        eta_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],abs(batch[0]['trk_eta'][batch_num*chunkread + ievt]),res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        MVA_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_MVA1'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
 
-        #batch[0]['trk_eta'] = batch[0]['trk_eta']+ np.random.normal(loc=0,scale=5, size = len(batch[0]['trk_eta']) )
-        #batch[0]['trk_pt'] = batch[0]['trk_pt'] +  np.random.normal(loc=0,scale=0.1, size = len(batch[0]['trk_pt']))
-        #batch[0]['trk_z0'] = batch[0]['trk_z0'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['trk_z0']) )
-        #batch[0]['pv_reco'] = batch[0]['pv_reco'] +  np.random.normal(loc=5,scale=1, size = len(batch[0]['pv_reco']) )
-        ##############################################################
+        chi2rphi_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_chi2rphi'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        chi2rz_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_chi2rz'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        bendchi2_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_bendchi2'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        phi_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],abs(batch[0]['trk_phi'][batch_num*chunkread + ievt]),res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        nstub_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],batch[0]['trk_nstub'][batch_num*chunkread + ievt],res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
+        overeta_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],trk_overEta,res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0)
 
-        # Define other training features here and add name to branches list
+        trk_histo = CreateHisto(batch[0]['trk_z0'][batch_num*chunkread + ievt],ntrk,res_func=linear_res_function(batch[0]['trk_pt'][batch_num*chunkread + ievt]), nbins=nbins, max_z0=max_z0,factor=1)
 
-        # batch[0]["my_feautre"] = batch[0]["pv_reco"] ** 2
+        histo_list = [pt_histo[0],eta_histo[0],MVA_histo[0],chi2rphi_histo[0],chi2rz_histo[0],bendchi2_histo[0],phi_histo[0],nstub_histo[0],overeta_histo[0],trk_histo[0]]
+        twod_hist = np.stack(histo_list, axis=0)
+
+        twod_hist = np.nan_to_num(twod_hist)
+        twod_hist /= np.max(twod_hist)
+        Histograms[num_histos] = twod_hist
+
+        Vertices[num_histos] = (batch[3]['pv_MC'][batch_num*chunkread + ievt][0])/max_z0
+        num_histos += 1
 
         ##############################################################
 
     batch_num += 1
 
     #Add batch dataframe to larger dataframe, only defined branches are added to save memory
-    TrackDF = pd.concat([TrackDF,batch[0][branches_dict['ntuple_names']]])
     print(batch_num," out of: ", len(events))
 
-# Reset index due to double indices in concatanated array
-TrackDF.reset_index(inplace=True)
-# Remove any tracks with NA entries
-TrackDF.dropna(inplace=True)
-
-# Get random ordered indices of track DF, this will tell us 
-# which tracks to pick out of total dataset when getting train, test, val
-perm = np.random.permutation(TrackDF.index)
-
-# Find number of tracks in train fraction [0:train_end] is train fraction
-train_end = int(train_fraction * len(TrackDF.index))
-# Find tracks for val fraction [train_end:validate_end] is val fraction
-validate_end = int(val_fraction * len(TrackDF.index)) + train_end
-# Sample TrackDF taking the training indices, randomised by permutation
-# same for validate and test
-train = TrackDF.loc[perm[:train_end]]
-validate = TrackDF.loc[perm[train_end:validate_end]]
-test = TrackDF.loc[perm[validate_end:]]
+X_train, X_test, y_train, y_test = train_test_split(Histograms, Vertices, test_size=0.3, random_state=1)
+X_train, X_val,  y_train, y_val  = train_test_split(X_train, y_train, test_size=0.5, random_state=1)
 
 print("================= Train =================")
-print(train.describe())
+print(X_train.shape)
+print(y_train.shape)
 print("================= Validate =================")
-print(validate.describe())
+print(X_val.shape)
+print(y_val.shape)
 print("================= Test =================")
-print(test.describe())
-
-# Reset indices, currently have original indices from TrackDF
-train.reset_index(inplace=True)
-validate.reset_index(inplace=True)
-test.reset_index(inplace=True)
+print(X_test.shape)
+print(y_test.shape)
 
 # Save, can modify these locations as needed
 os.system("mkdir "+name)
@@ -184,19 +120,25 @@ os.system("mkdir "+name+ "/Test")
 os.system("mkdir "+name+ "/Val")
 os.system("mkdir "+name+ "/Plots")
 
+np.save(name+"/Train/X.npy",X_train)
+np.save(name+"/Val/X.npy",X_val)
+np.save(name+"/Test/X.npy",X_test)
 
-train.to_pickle(name+"/Train/train.pkl") 
-validate.to_pickle(name+"/Val/val.pkl") 
-test.to_pickle(name+"/Test/test.pkl") 
+np.save(name+"/Train/y.npy",y_train)
+np.save(name+"/Val/y.npy",y_val)
+np.save(name+"/Test/y.npy",y_test)
 
-skip_plotting = ["from_PV","not_from_PV","pv_truth","pv_reco","trk_fake"]
-for i in range(len(branches_dict['ntuple_names'])):
-    plt.clf()
-    if (branches_dict['ntuple_names'][i] in skip_plotting):
-        pass
-    figure = plot_split_histo(TrackDF['from_PV'], TrackDF[branches_dict['ntuple_names'][i]],
-                              branches_dict['names'][i],
-                              branches_dict['ranges'][i],
-                              branches_dict['bins'][i],)
-    plt.savefig("%s/%s.png" % (name+"/Plots", branches_dict['ntuple_names'][i]+"_histo"))
-    plt.close()
+plt.clf()
+figure = plot_event(X_train[0],y_train[0]/max_z0,histo_names,max_z0,nbins)
+plt.savefig("%s/%s.png" % (name+"/Plots", "train_histo"))
+plt.close()
+
+plt.clf()
+figure = plot_event(X_val[0],y_val[0]/max_z0,histo_names,max_z0,nbins)
+plt.savefig("%s/%s.png" % (name+"/Plots", "val_histo"))
+plt.close()
+
+plt.clf()
+figure = plot_event(X_test[0],y_test[0]/max_z0,histo_names,max_z0,nbins)
+plt.savefig("%s/%s.png" % (name+"/Plots", "test_histo"))
+plt.close()

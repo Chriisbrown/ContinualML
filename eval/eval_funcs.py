@@ -50,85 +50,70 @@ matplotlib.rcParams['ytick.minor.width'] = 4
 
 colours=["red","green","blue","orange","purple","yellow"]
 
-def calculate_rates(actual,prediction,Nthresholds=50):
-    thresholds = np.linspace(0,1,Nthresholds)
-    precision = []
-    recall = []
-    FPR= []
+def plot_event(twod_histo,y,feature_names,max_z0,nbins):
+    fig,ax = plt.subplots(1,1,figsize=(24,10))
+    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax)
+    
+    nan_array = np.zeros_like(twod_histo[0])
+    nan_array[:] = np.NaN
+    nan_array = np.expand_dims(nan_array,axis=0)
+    twod_histo = np.vstack([twod_histo,nan_array])
+    hist2d = ax.imshow(twod_histo,cmap=colormap,aspect='auto',extent=[-1*max_z0,max_z0,0,len(feature_names)])
 
-    auc = metrics.roc_auc_score(actual,prediction)
+    ax.grid(True,axis='y',linewidth=2)
+    ax.grid(True,axis='x',linewidth=1)
+    ax.set_ylabel('Track Feature',ha="right",y=1)
+    ax.set_xlabel('Track $z_{0}$ [cm]',ha="right",x=1)
+        
+    ax.set_yticklabels(feature_names)
+    ax.set_yticks(np.array([1,2,3,4,5,6,7,8,9,10,11]))
 
-    for j,threshold in enumerate(thresholds):
-            # Find number of true negatives, false positive, false negatives and true positives when decision bounary == threshold
-            print("Threshold: ",j,"out of ",Nthresholds)
-            tn, fp, fn, tp = metrics.confusion_matrix(actual, prediction>threshold).ravel()
-            precision.append( tp / (tp + fp) )
-            recall.append(tp / (tp + fn) )
-            FPR.append(fp / (fp + tn) )
+    rect = plt.Rectangle((y-((2.5*max_z0)/nbins), 1), 5*max_z0/nbins, len(feature_names),
+                                    fill=False,linewidth=2,linestyle='--',edgecolor='r')
+    ax.add_patch(rect)
+    ax.text(y-0.5, 0.5, "True Vertex", color='r')
 
-    return [precision,recall,FPR,auc]
+    cbar = plt.colorbar(hist2d , ax=ax)
+    cbar.set_label('Weighted Density')
 
-def plotPV_roc(rates,names,colours=colours,title="None"):
-    '''
-    Plots reciever operating characteristic curve for output of a predicition model
-
-    Takes: 
-        actual: a numpy array of true values 0 or 1
-        predictions: a list of numpy arrays, each array same length as actual which are probabilities of coming from class 1, float between 0 and 1
-        names: a list of strings naming each of the prediciton arrays
-        Nthresholds: how many thresholds between 0 and 1 to calcuate the TPR, FPR etc.
-        colours: list of matplotlib colours to be used for each item in the predictions list
-
-    '''
-    fig,ax = plt.subplots(1,2,figsize=(20,10))
-    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[0])
-    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[1])
-
-    items = 0
-
-    # Iterate through predictions
-    for i,rate in enumerate(rates):
-        precision = rate[0]
-        recall = rate[1]
-        FPR= rate[2]
-
-        # Plot precision recall and ROC curves
-        ax[0].plot(recall,precision,label=str(names[i]),linewidth=LINEWIDTH,color=colours[items])
-        ax[1].plot(recall,FPR,linewidth=LINEWIDTH,label='\n'.join(wrap(f"%s AUC: %.4f" %(names[i],rate[3]),LEGEND_WIDTH)),color=colours[items])
-        items += 1
-
-    ax[0].grid(True)
-    ax[0].set_xlabel('Efficiency',ha="right",x=1)
-    ax[0].set_ylabel('Purity',ha="right",y=1)
-    ax[0].set_xlim([0,0.75])
-    ax[0].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
-
-    ax[1].grid(True)
-    ax[1].set_yscale("log")
-    ax[1].set_xlabel('Track to Vertex Association True Positive Rate',ha="right",x=1)
-    ax[1].set_ylabel('Track to Vertex Association False Positive Rate',ha="right",y=1)
-    ax[1].set_xlim([0.75,1])
-    ax[1].set_ylim([1e-2,1])
-    ax[1].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
-    plt.suptitle(title)
+    cbar.set_label('Weighted Density')
+    ax.tick_params(axis='y', which='minor', right=False,left=False)
     plt.tight_layout()
     return fig
 
 
-def plot_split_histo(actual,variable,variable_name,range=(0,1),bins=100,title="None"):
-    pv_track_sel = actual == 1
-    pu_track_sel = actual == 0
-    fig,ax = plt.subplots(1,1,figsize=(12,10))
-    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax)
+def plotz0_residual(actual,predicted,names,colours=colours,title="None",max_z0=20.46912512):
+    plt.clf()
+    fig,ax = plt.subplots(1,2,figsize=(20,10))
+    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[0])
+    hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[1])
     
-    ax.hist(variable[pv_track_sel],range=range, bins=bins, label="PV tracks", density=True,histtype="stepfilled",color='g',alpha=0.7,linewidth=LINEWIDTH)
-    ax.hist(variable[pu_track_sel],range=range, bins=bins, label="PU tracks", density=True,histtype="stepfilled",color='r',alpha=0.7,linewidth=LINEWIDTH)
-    ax.set_xlabel(variable_name, horizontalalignment='right', x=1.0)
-    ax.set_ylabel("Fraction of Tracks", horizontalalignment='right', y=1.0)
-    ax.set_yscale("log")
-    ax.legend()
-    ax.tick_params(axis='x', which='minor', bottom=False,top=False)
+    
+    items = 0
+    for i,prediction in enumerate(predicted):
+        FH = actual - prediction
+        qz0_FH = np.percentile(FH,[32,50,68])
+        ax[0].hist(FH,bins=50,range=(-1*max_z0,max_z0),histtype="step",
+                 linewidth=LINEWIDTH,color = colours[items],
+                 label='\n'.join(wrap(f"%s \nRMS = %.4f" 
+                 %(names[i],np.sqrt(np.mean(FH**2))),LEGEND_WIDTH)),density=True)
+        ax[1].hist(FH,bins=50,range=(-1,1),histtype="step",
+                 linewidth=LINEWIDTH,color = colours[items],
+                 label='\n'.join(wrap(f"%s \nQuartile Width = %.4f" 
+                 %(names[i],qz0_FH[2]-qz0_FH[0]),LEGEND_WIDTH)),density=True)
+        items+=1
+    
+    ax[0].grid(True)
+    ax[0].set_xlabel('$z^{PV}_0$ Residual [cm]',ha="right",x=1)
+    ax[0].set_ylabel('Events',ha="right",y=1)
+    ax[0].set_yscale("log")
+    ax[0].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
+
+    ax[1].grid(True)
+    ax[1].set_xlabel('$z^{PV}_0$ Residual [cm]',ha="right",x=1)
+    ax[1].set_ylabel('Events',ha="right",y=1)
+    ax[1].legend(loc='upper left', bbox_to_anchor=(0.05, 0.95))
+
     plt.suptitle(title)
     plt.tight_layout()
-
     return fig
