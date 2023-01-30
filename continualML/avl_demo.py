@@ -1,7 +1,7 @@
 
 from torch.optim import SGD,Adam
-from torch.nn import CrossEntropyLoss, BCELoss
-from dataset.torch_dataset import TrackDataset, Randomiser, GaussianSmear
+from torch.nn import CrossEntropyLoss, BCELoss, L1Loss
+from dataset.torch_dataset import EventDataset, Randomiser, GaussianSmear
 from torch.utils.data import DataLoader
 from avalanche.benchmarks import ni_benchmark, generators, utils
 from avalanche.benchmarks.utils import AvalancheDataset
@@ -13,10 +13,16 @@ from avalanche.logging import InteractiveLogger, TextLogger, TensorboardLogger
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive
 
+from sklearn.metrics import *
+
 from torchvision.datasets import MNIST
-from model.simpleNN import simpleNN
+from model.simpleNN import simpleConv
 import torch
 from torchvision import transforms
+
+batchsize = 64
+max_z0 = 20.46912512
+nbins = 256
 
 from metrics import ROC_metrics
 from strategies import ReplayP
@@ -24,19 +30,19 @@ from strategies import ReplayP
 from avalanche.training.supervised.strategy_wrappers import SynapticIntelligence
 
 # Create datasets and loaders
-Traindata = TrackDataset("../dataset/TTfull/Train/train.pkl")
-Traindata_v1 = TrackDataset("../dataset/TTv1/Train/train.pkl")
-Traindata_v2 = TrackDataset("../dataset/TTv2/Train/train.pkl")
-Traindata_v3 = TrackDataset("../dataset/TTv3/Train/train.pkl")
-Traindata_v4 = TrackDataset("../dataset/TTv4/Train/train.pkl")
-Traindata_v5 = TrackDataset("../dataset/TTv5/Train/train.pkl")
+Traindata = EventDataset("../dataset/TTfull_events/Train/")
+Traindata_v1 = EventDataset("../dataset/TTv1full_events/Train/")
+Traindata_v2 = EventDataset("../dataset/TTv2full_events/Train/")
+Traindata_v3 = EventDataset("../dataset/TTv3full_events/Train/")
+Traindata_v4 = EventDataset("../dataset/TTv4full_events/Train/")
+Traindata_v5 = EventDataset("../dataset/TTv5full_events/Train/")
 
-Evaldata = TrackDataset("../dataset/TTfull/Val/val.pkl")
-Evaldata_v1 = TrackDataset("../dataset/TTv1/Val/val.pkl")
-Evaldata_v2 = TrackDataset("../dataset/TTv2/Val/val.pkl")
-Evaldata_v3 = TrackDataset("../dataset/TTv3/Val/val.pkl")
-Evaldata_v4 = TrackDataset("../dataset/TTv4/Val/val.pkl")
-Evaldata_v5 = TrackDataset("../dataset/TTv5/Val/val.pkl")
+Evaldata = EventDataset("../dataset/TTfull_events/Val/")
+Evaldata_v1 = EventDataset("../dataset/TTv1full_events/Val/")
+Evaldata_v2 = EventDataset("../dataset/TTv2full_events/Val/")
+Evaldata_v3 = EventDataset("../dataset/TTv3full_events/Val/")
+Evaldata_v4 = EventDataset("../dataset/TTv4full_events/Val/")
+Evaldata_v5 = EventDataset("../dataset/TTv5full_events/Val/")
 
 
 train_fixed_exp_assignment = [[i for i in range(len(Traindata))],
@@ -55,7 +61,7 @@ scenario = ni_benchmark(
         6, task_labels=False, shuffle=False, fixed_exp_assignment=train_fixed_exp_assignment
     )
 # MODEL CREATION
-model = simpleNN()
+model = simpleConv()
 #model.load_state_dict(torch.load("../model/SavedModels/modelTTfull"))
 
 # DEFINE THE EVALUATION PLUGIN and LOGGERS
@@ -74,7 +80,6 @@ interactive_logger = InteractiveLogger()
 
 eval_plugin = EvaluationPlugin(
     accuracy_metrics(minibatch=True, epoch=True, experience=True, stream=False),
-    ROC_metrics(minibatch=True,epoch=True,experience=True,stream=False),
     loss_metrics(minibatch=True, epoch=True, experience=True, stream=False),
     forgetting_metrics(experience=True),
     timing_metrics(epoch=True, epoch_running=True),
@@ -87,7 +92,7 @@ eval_plugin = EvaluationPlugin(
 # CREATE THE STRATEGY INSTANCE (NAIVE)
 cl_strategy = Naive(
     model, SGD(model.parameters(), lr=0.01, momentum=0.9),
-    BCELoss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
+    L1Loss(), train_mb_size=500, train_epochs=4, eval_mb_size=100,
     evaluator=eval_plugin,plugins=[ReplayP(mem_size=2000)])
 
 

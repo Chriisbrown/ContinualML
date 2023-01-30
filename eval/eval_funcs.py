@@ -82,15 +82,16 @@ def plot_event(twod_histo,y,feature_names,max_z0,nbins):
     return fig
 
 
-def plotz0_residual(actual,predicted,names,colours=colours,title="None",max_z0=20.46912512):
+def plotz0_residual(actual,predicted,names,title="None",max_z0=20.46912512,colours=colours,):
     plt.clf()
     fig,ax = plt.subplots(1,2,figsize=(20,10))
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[0])
     hep.cms.label(llabel="Phase-2 Simulation Preliminary",rlabel="14 TeV, 200 PU",ax=ax[1])
     
-    
+    print(len(predicted))
     items = 0
     for i,prediction in enumerate(predicted):
+        print(len(prediction))
         FH = actual - prediction
         qz0_FH = np.percentile(FH,[32,50,68])
         ax[0].hist(FH,bins=50,range=(-1*max_z0,max_z0),histtype="step",
@@ -117,3 +118,14 @@ def plotz0_residual(actual,predicted,names,colours=colours,title="None",max_z0=2
     plt.suptitle(title)
     plt.tight_layout()
     return fig
+
+def predictFastHisto(twod_histo, max_z0=20.46912512,nbins=256):
+    z0List = []
+    halfBinWidth = 0.5*(2*max_z0)/nbins
+
+    for ibatch in range(twod_histo.shape[0]):
+        hist = np.convolve(twod_histo[ibatch][0][0],[1,1,1],mode='same')
+        z0Index= np.argmax(hist)
+        z0 = -1*max_z0 +(2*max_z0)*z0Index/nbins + halfBinWidth
+        z0List.append([z0])
+    return np.array(z0List,dtype=np.float32)

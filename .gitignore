@@ -8,3 +8,4 @@ events*
 */__pycache__/**
 model/SavedModels/**
 *.pyc
+*.npy

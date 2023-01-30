@@ -9,6 +9,9 @@ import torch
 from torchvision import transforms
 batchsize = 64
 max_z0 = 20.46912512
+nbins = 256
+
+torch.multiprocessing.set_sharing_strategy('file_system')
 '''
 Training file for simple model, acts as example of training a pytorch model
 '''
@@ -19,22 +22,23 @@ models_dict = {"pytorch_model":{'model':simpleConv(),'predicted_array':[],'file_
 training_data = EventDataset("dataset/TTfull_events/Train/")
 val_data = EventDataset("dataset/TTfull_events/Val/")
 
-train_dataloader = DataLoader(training_data, batch_size=batchsize, shuffle=True,num_workers=8,drop_last=True )
-val_dataloader = DataLoader(val_data, batch_size=batchsize, shuffle=True,num_workers=8,drop_last=True )
+train_dataloader = DataLoader(training_data, batch_size=batchsize, shuffle=True,num_workers=16,drop_last=True )
+val_dataloader = DataLoader(val_data, batch_size=batchsize, shuffle=True,num_workers=16,drop_last=True )
 
 # Create model
 clf = simpleConv()
 clf = clf.float()
 
 # Define loss function (Binary Cross Entropy)
-criterion = nn.HuberLoss(delta=0.6)
+#criterion = nn.HuberLoss(delta=0.6)
+criterion = nn.L1Loss()
 # Define optimisation strategy (Stochastic Gradient Descent) with hyperparameters
 #optimizer = torch.optim.Adam(clf.parameters(), lr=0.001)
 
-optimizer = torch.optim.SGD(clf.parameters(), lr=0.005, momentum=0.1)
+optimizer = torch.optim.SGD(clf.parameters(), lr=0.01, momentum=0.9)
 scheduler = ReduceLROnPlateau(optimizer, 'min',verbose=True,patience=3)
 
-epochs = 100
+epochs = 75
 # Iterate through training epochs (one full round of entire training dataset)
 for epoch in range(epochs):
   running_loss = 0.0
@@ -58,6 +62,7 @@ for epoch in range(epochs):
 
   true_array = []
   predicted_array = []
+  FH_array = []
   with torch.no_grad():
       for data in val_dataloader:
         inputs, labels = data
@@ -65,16 +70,21 @@ for epoch in range(epochs):
         outputs = clf(inputs.float())
         predicted_array.append(outputs.numpy())
         true_array.append(labels.numpy())
-  predicted_array = np.concatenate(predicted_array).ravel()
-  true_array = np.concatenate(true_array).ravel()
+        FH_array.append(predictFastHisto(inputs))
 
-  print(f'[{epoch + 1}, {i + 1:5d}] MSE: {mean_squared_error(true_array, predicted_array):.5f}')
-  print(f'[{epoch + 1}, {i + 1:5d}] MAE: {mean_absolute_error(true_array, predicted_array):.5f}')
-  print(f'[{epoch + 1}, {i + 1:5d}] R2: {r2_score(true_array, predicted_array):.5f}')
+  predicted_array = np.concatenate(predicted_array).ravel()*max_z0
+  true_array = np.concatenate(true_array).ravel()*max_z0
+  FH_array = np.concatenate(FH_array).ravel()
+
+  predicted_array = predicted_array - (0.5*(2*max_z0)/nbins )
+
+  print(f'[{epoch + 1}, {i + 1:5d}] MSE: {mean_squared_error(true_array, predicted_array):.5f} FH MSE: {mean_squared_error(true_array, FH_array):.5f}')
+  print(f'[{epoch + 1}, {i + 1:5d}] MAE: {mean_absolute_error(true_array, predicted_array):.5f} FH MAE: {mean_absolute_error(true_array, FH_array):.5f}')
+  print(f'[{epoch + 1}, {i + 1:5d}] R2:  {r2_score(true_array, predicted_array):.5f} FH R2:  {r2_score(true_array, FH_array):.5f}')
   print("=============================================")
 
 
-# Save model
-torch.save(clf.state_dict(),  models_dict["pytorch_model"]['file_location'])
+  # Save model
+  torch.save(clf.state_dict(),  models_dict["pytorch_model"]['file_location'])
 
 
