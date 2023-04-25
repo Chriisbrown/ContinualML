@@ -51,6 +51,8 @@ matplotlib.rcParams['ytick.minor.width'] = 4
 colours=["red","green","blue","orange","purple","yellow"]
 
 def calculate_rates(actual,prediction,Nthresholds=50):
+    print(actual)
+    print(prediction)
     thresholds = np.linspace(0,1,Nthresholds)
     precision = []
     recall = []

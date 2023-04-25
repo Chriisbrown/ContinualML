@@ -11,28 +11,23 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 '''
 Testing file for simple model, acts as example of testing a pytorch model
 '''
-# Define feature transformations
-z0Smear = GaussianSmear(1,1,'trk_z0')
-pTSmear = GaussianSmear(1,1,'trk_pt')
-etaSmear = GaussianSmear(1,1,'trk_eta')
 
-transfom_set = transforms.Compose([z0Smear,pTSmear,etaSmear])
 # Create datasets and loaders
-test_data_unmodified = TrackDataset("dataset/Test/test.pkl")
+test_data_unmodified = TrackDataset("dataset/smear/Test/test.pkl")
 test_dataloader_unmodified = DataLoader(test_data_unmodified, batch_size=5000, shuffle=False,num_workers=8)
 
-test_data_smear = TrackDataset("dataset/Test/test.pkl")
+test_data_smear = TrackDataset("dataset/smear/Test/test.pkl")
 test_dataloader_smear = DataLoader(test_data_smear, batch_size=5000, shuffle=False,num_workers=8)
 
 dataloaders = [test_dataloader_unmodified,test_dataloader_smear]
 datanames = ["unmodified","smeared"]
 
 for dataloader,dataname in zip(dataloaders,datanames):
-  models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel","name":"simple NN unmodifed only"},
-               "pytorch_model_smear":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_smear","name":"simple NN smear only"},
-               "pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
+  models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/modelTTfull","name":"simple NN unmodifed only"},
+               #"pytorch_model_smear":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_smear","name":"simple NN smear only"},
+               #"pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_retrain","name":"simple NN retrained on smear"},
                #"pytorch_cl_model":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_Replay","name":"simpleNN replay"},
-               "pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_SI","name":"simpleNN SI"}
+               #"pytorch_cl_model_si":{'model':simpleNN(),'predicted_array':[],'file_location':"model/SavedModels/simplemodel_CL_SI","name":"simpleNN SI"}
                }
   for model in models_dict:
 
