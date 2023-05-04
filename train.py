@@ -19,12 +19,12 @@ models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'file_lo
 
 
 # Create datasets and creae dataloaders for pytorch
-training_data = TrackDataset("dataset/test/Train/train.pkl")
-val_data = TrackDataset("dataset/test/Val/val.pkl")
+training_data = TrackDataset("dataset/TTbarFull/Train/train.pkl")
+val_data = TrackDataset("dataset/TTbarFull/Val/val.pkl")
 
 if smear:
-  training_data = TrackDataset("dataset/smear/Train/train.pkl")
-  val_data = TrackDataset("dataset/smear/Val/val.pkl")
+  training_data = TrackDataset("dataset/TTbarFullSmear/Train/train.pkl")
+  val_data = TrackDataset("dataset/TTbarFullSmear/Val/val.pkl")
 
 train_dataloader = DataLoader(training_data, batch_size=5000, shuffle=True,num_workers=8)
 val_dataloader = DataLoader(val_data, batch_size=5000, shuffle=True,num_workers=8)

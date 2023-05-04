@@ -14,7 +14,7 @@ Testing file for simple model, acts as example of testing a pytorch model
 
 # Create datasets and loaders
 
-list_of_files = ["test","smear"] #["TTfull","TTv1","TTv2","TTv3","TTv4","TTv5"]
+list_of_files = ["TTbarFull","TTbarFullSmear"] #["TTfull","TTv1","TTv2","TTv3","TTv4","TTv5"]
 
 models_dict = {"pytorch_model":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/modelTTfull","name":"NN Baseline"},
                "pytorch_model_retrained":{'model':simpleNN(),'predicted_array':[],'rates':[],'file_location':"model/SavedModels/retrainedmodelTTfull","name":"NN Retrained"},
